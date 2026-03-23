@@ -4,6 +4,7 @@ import {Combatant, Condition, getDefaultCombatants, Visibility} from "./function
 import {useStorage} from "@vueuse/core";
 import DMView from "./DMView.vue";
 import PlayerView from "./PlayerView.vue";
+import PlayerSimpleView from "./PlayerSimpleView.vue";
 import {useFirebaseSync, isFirebaseReady, generateSessionId, waitForFirebase} from "./firebase.ts";
 import type {GameSystem} from "./db.ts";
 
@@ -18,12 +19,14 @@ const dmSessions = useStorage<string[]>('dmSessions', [])
 // Security: Determine view mode
 // - If session exists and NOT in dmSessions, force player view (read-only)
 // - If session exists and IS in dmSessions, allow DM view
-// - If no session but view=player in URL, show player view (offline mode)
+// - If no session but view=player or view=player-simple in URL, show player view (offline mode)
 // - Otherwise, default DM view
 const isSharedPlayerLink = computed(() => {
   return !!sessionId.value && !dmSessions.value.includes(sessionId.value)
 })
-const isPlayerViewParam = urlParams.get('view') === 'player'
+
+const viewMode = urlParams.get('view') || ''
+const isPlayerViewParam = viewMode === 'player' || viewMode === 'player-simple'
 const isDMView = ref<boolean>(!isSharedPlayerLink.value && !isPlayerViewParam)
 
 // Online mode is active when there's a session ID in the URL
@@ -33,8 +36,10 @@ const isOnlineMode = computed(() => !!sessionId.value)
 watch([sessionId, () => window.location.search], () => {
   if (isSharedPlayerLink.value) {
     const currentParams = new URLSearchParams(window.location.search)
-    if (currentParams.get('view') !== 'player') {
-      // Force player view for shared sessions
+    const currentView = currentParams.get('view')
+
+    if (currentView !== 'player' && currentView !== 'player-simple') {
+      // Force default player view for shared sessions if invalid/missing
       const url = new URL(window.location.href)
       url.searchParams.set('view', 'player')
       window.location.href = url.toString()
@@ -345,6 +350,7 @@ function resetToDefaults(): void {
   <div v-if="!isInitialized" class="flex items-center justify-center min-h-screen">
     <div class="loading loading-spinner loading-lg"></div>
   </div>
+
   <DMView
       v-else-if="isDMView"
       :turn="turn"
@@ -359,6 +365,14 @@ function resetToDefaults(): void {
       @removeCombatant="removeCombatant"
       @toggleOnlineMode="toggleOnlineMode"
   />
+
+  <PlayerSimpleView
+      v-else-if="viewMode === 'player-simple'"
+      :turn="turn"
+      :round="round"
+      :combatants="orderedCombatants"
+  />
+
   <PlayerView
       v-else
       :turn="turn"
