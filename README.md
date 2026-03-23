@@ -48,7 +48,7 @@ or
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using the built-in hosted SQLite server - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using the built-in hosted SQLite service - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -84,7 +84,8 @@ or
 ## Installation
 
 ### Prerequisites
-- Node.js (v22 or higher recommended for the hosted SQLite server)
+- Node.js (v20 or higher recommended)
+- sqlite3 CLI available on the host for online mode
 - pnpm (or npm/yarn)
 
 ### Setup

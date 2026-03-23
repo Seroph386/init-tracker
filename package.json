@@ -28,12 +28,12 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --pool=vmThreads",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "type-check": "vue-tsc -b --noEmit",
+    "type-check": "vue-tsc --noEmit",
     "dev:api": "node --watch server/index.js",
     "start": "node server/index.js"
   },

@@ -3,11 +3,9 @@ import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
-const isGithubPagesBuild = process.env.GITHUB_PAGES === 'true'
-
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [vue(), tailwindcss()],
-  base: isGithubPagesBuild ? '/init-tracker/' : '/',
+  base: mode === 'github-pages' ? '/init-tracker/' : '/',
   server: {
     proxy: {
       '/api': 'http://localhost:8787',
@@ -19,5 +17,6 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    pool: 'vmThreads',
   }
-})
+}))

@@ -1,8 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import { createReadStream, existsSync, mkdirSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { dirname, extname, join, normalize } from 'node:path'
-import { DatabaseSync } from 'node:sqlite'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -15,30 +15,6 @@ const port = Number(process.env.PORT || 8787)
 const host = process.env.HOST || '0.0.0.0'
 
 mkdirSync(dataDir, { recursive: true })
-
-const db = new DatabaseSync(dbPath)
-db.exec(`
-  CREATE TABLE IF NOT EXISTS sessions (
-    id TEXT PRIMARY KEY,
-    state TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL
-  )
-`)
-
-const selectSessionStatement = db.prepare(`
-  SELECT id, state, created_at, updated_at
-  FROM sessions
-  WHERE id = ?
-`)
-
-const upsertSessionStatement = db.prepare(`
-  INSERT INTO sessions (id, state, created_at, updated_at)
-  VALUES (?, ?, ?, ?)
-  ON CONFLICT(id) DO UPDATE SET
-    state = excluded.state,
-    updated_at = excluded.updated_at
-`)
 
 const sseClients = new Map()
 const contentTypes = {
@@ -55,27 +31,87 @@ const contentTypes = {
   '.woff2': 'font/woff2',
 }
 
+function escapeSqlString(value) {
+  return `'${String(value).replaceAll("'", "''")}'`
+}
+
+function runSql(sql, { json = false } = {}) {
+  const args = []
+
+  if (json) {
+    args.push('-json')
+  }
+
+  args.push(dbPath, sql)
+
+  const output = execFileSync('sqlite3', args, {
+    encoding: 'utf8',
+  }).trim()
+
+  if (!json) {
+    return output
+  }
+
+  return output ? JSON.parse(output) : []
+}
+
+function initializeDatabase() {
+  runSql(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      state TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+  `)
+}
+
 function parseSessionRecord(record) {
-  if (!record) return null
+  if (!record) {
+    return null
+  }
 
   return {
     id: record.id,
-    createdAt: record.created_at,
-    updatedAt: record.updated_at,
+    createdAt: Number(record.createdAt),
+    updatedAt: Number(record.updatedAt),
     state: JSON.parse(record.state),
   }
 }
 
 function getSession(sessionId) {
-  return parseSessionRecord(selectSessionStatement.get(sessionId))
+  const rows = runSql(`
+    SELECT
+      id,
+      state,
+      created_at AS createdAt,
+      updated_at AS updatedAt
+    FROM sessions
+    WHERE id = ${escapeSqlString(sessionId)}
+    LIMIT 1;
+  `, { json: true })
+
+  return parseSessionRecord(rows[0])
 }
 
 function writeSession(sessionId, state) {
   const timestamp = Date.now()
   const existing = getSession(sessionId)
   const createdAt = existing?.createdAt ?? timestamp
+  const serializedState = escapeSqlString(JSON.stringify(state))
 
-  upsertSessionStatement.run(sessionId, JSON.stringify(state), createdAt, timestamp)
+  runSql(`
+    INSERT INTO sessions (id, state, created_at, updated_at)
+    VALUES (
+      ${escapeSqlString(sessionId)},
+      ${serializedState},
+      ${createdAt},
+      ${timestamp}
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      state = excluded.state,
+      updated_at = excluded.updated_at;
+  `)
 
   return {
     id: sessionId,
@@ -170,7 +206,7 @@ async function handleApi(request, response, pathname) {
   }
 
   if (pathname === '/api/health') {
-    sendJson(response, 200, { ok: true, database: 'sqlite', path: dbPath })
+    sendJson(response, 200, { ok: true, database: 'sqlite3-cli', path: dbPath })
     return true
   }
 
@@ -267,6 +303,8 @@ async function handleStatic(response, pathname) {
 
   await serveStaticFile(response, join(distDir, 'index.html'))
 }
+
+initializeDatabase()
 
 const server = createServer(async (request, response) => {
   if (!request.url) {

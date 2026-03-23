@@ -16,13 +16,15 @@ Online mode no longer depends on Firebase or any third-party hosted database. In
 - a built-in HTTP API server at `server/index.js`
 - a SQLite session store saved to `.data/sessions.sqlite`
 - server-sent event (SSE) streaming for live player updates
+- standard `sqlite3` CLI access instead of the experimental `node:sqlite` module
 
-That means you can deploy the app and the online session backend together on the same host.
+That means you can deploy the app and the online session backend together on the same host while staying compatible with newer Node releases, including Node 24+.
 
 ## Prerequisites
 
-- Node.js 22 or newer
+- Node.js 20 or newer
 - pnpm 10 or newer
+- `sqlite3` installed on the server or local machine
 
 ## Local Development
 
@@ -68,7 +70,7 @@ The production server will:
 
 - serve the built frontend from `dist/`
 - expose the online-mode API under `/api/*`
-- persist shared sessions in `.data/sessions.sqlite`
+- persist shared sessions in `.data/sessions.sqlite` via the host `sqlite3` binary
 
 ## Using Online Mode
 

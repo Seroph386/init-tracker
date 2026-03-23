@@ -2,10 +2,11 @@
 
 This guide gets you running with self-hosted online mode in a few minutes.
 
-## 1. Install dependencies
+## 1. Install dependencies and confirm sqlite3 is available
 
 ```bash
 pnpm install
+sqlite3 --version
 ```
 
 ## 2. Start the backend
