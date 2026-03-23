@@ -39,7 +39,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/Valforte/initiative-tracker.git
+   git remote add upstream https://github.com/Seroph386/init-tracker.git
    ```
 
 4. **Install dependencies**:

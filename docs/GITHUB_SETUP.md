@@ -6,7 +6,7 @@ This document contains final setup steps to make your repository fully polished 
 
 Topics help people discover your project. Add these on GitHub:
 
-1. Go to your repository: https://github.com/Valforte/initiative-tracker
+1. Go to your repository: https://github.com/Seroph386/init-tracker
 2. Click the ⚙️ (gear) icon next to "About" on the right sidebar
 3. Add these topics (click "Add topics"):
 
@@ -42,7 +42,7 @@ dm-tools
 
 When you're ready to announce your first stable version:
 
-1. Go to: https://github.com/Valforte/initiative-tracker/releases/new
+1. Go to: https://github.com/Seroph386/init-tracker/releases/new
 2. Click "Choose a tag" → Type `v1.0.0` → Click "Create new tag: v1.0.0 on publish"
 3. **Release title**: `v1.0.0 - Initial Release`
 4. **Description** (use this template):
@@ -197,7 +197,7 @@ I've built a free initiative tracker specifically for PF2e with features like:
 - Works completely in-browser (no server needed)
 
 Live demo: https://valforte.github.io/Initiative-Tracker/
-GitHub (MIT license): https://github.com/Valforte/initiative-tracker
+GitHub (MIT license): https://github.com/Seroph386/init-tracker
 
 Would love feedback from the community!
 ```

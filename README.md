@@ -1,9 +1,9 @@
 # 🎲 Pathfinder 2e Initiative Tracker
 
-![CI](https://github.com/Valforte/initiative-tracker/workflows/CI/badge.svg)
-![License](https://img.shields.io/github/license/Valforte/initiative-tracker)
-![Version](https://img.shields.io/github/package-json/v/Valforte/initiative-tracker)
-![Stars](https://img.shields.io/github/stars/Valforte/initiative-tracker?style=social)
+![CI](https://github.com/Seroph386/init-tracker/workflows/CI/badge.svg)
+![License](https://img.shields.io/github/license/Seroph386/init-tracker)
+![Version](https://img.shields.io/github/package-json/v/Seroph386/init-tracker)
+![Stars](https://img.shields.io/github/stars/Seroph386/init-tracker?style=social)
 
 A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views. Built with Vue 3, TypeScript, and Tailwind CSS. 
 
@@ -92,7 +92,7 @@ or
 
 ```bash
 # Clone the repository
-git clone https://github.com/Valforte/initiative-tracker.git
+git clone https://github.com/Seroph386/init-tracker.git
 cd initiative-tracker
 
 # Install dependencies
@@ -217,11 +217,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Icons by [Iconify](https://iconify.design/)
 - Monster data from Pathfinder 2e Monster Core and Age of Ashes Adventure Path
 - Inspired by the need for a clean, modern initiative tracker for in-person play
+- Original project: [Initiative-Tracker by Valforte](https://github.com/Valforte/initiative-tracker)
 
 ## Support
 
 If you encounter any issues or have suggestions:
-- Open an issue on [GitHub Issues](https://github.com/Valforte/initiative-tracker/issues)
+- Open an issue on [GitHub Issues](https://github.com/Seroph386/init-tracker/issues)
 - Check existing issues to avoid duplicates
 - Provide as much detail as possible (browser, steps to reproduce, screenshots)
 
