@@ -37,6 +37,9 @@ jobs:
     - name: Install dependencies
       run: pnpm install
 
+    - name: Hydrate Linux native dependencies
+      run: node scripts/install-native-linux-deps.mjs
+
     - name: Build for production
       run: pnpm build --mode github-pages
 
