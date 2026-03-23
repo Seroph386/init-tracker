@@ -39,7 +39,8 @@ const props = defineProps<{
   sessionId: string,
 }>()
 
-const showCopiedMessage = ref(false)
+const copiedButton = ref<'player' | 'player-simple' | null>(null)
+let copiedMessageTimeout: ReturnType<typeof setTimeout> | null = null
 const showResetConfirm = ref(false)
 const isSettingsOpen = ref(false)
 
@@ -147,9 +148,38 @@ async function copyPlayerUrl(): Promise<void> {
 
   try {
     await navigator.clipboard.writeText(url.toString())
-    showCopiedMessage.value = true
-    setTimeout(() => {
-      showCopiedMessage.value = false
+    copiedButton.value = 'player'
+
+    if (copiedMessageTimeout) {
+      clearTimeout(copiedMessageTimeout)
+    }
+
+    copiedMessageTimeout = setTimeout(() => {
+      copiedButton.value = null
+      copiedMessageTimeout = null
+    }, 2000)
+  } catch (err) {
+    console.error('Failed to copy URL:', err)
+  }
+}
+async function copySimplePlayerUrl(): Promise<void> {
+  if (!props.sessionId) return
+
+  const url = new URL(window.location.href)
+  url.searchParams.set('session', props.sessionId)
+  url.searchParams.set('view', 'player-simple')
+
+  try {
+    await navigator.clipboard.writeText(url.toString())
+    copiedButton.value = 'player-simple'
+
+    if (copiedMessageTimeout) {
+      clearTimeout(copiedMessageTimeout)
+    }
+
+    copiedMessageTimeout = setTimeout(() => {
+      copiedButton.value = null
+      copiedMessageTimeout = null
     }, 2000)
   } catch (err) {
     console.error('Failed to copy URL:', err)
@@ -177,10 +207,23 @@ async function copyPlayerUrl(): Promise<void> {
         >
           <Icon icon="tabler:users-group" height="24" />
           {{t.dm_actions.copyPlayerUrl}}
-          <div v-if="showCopiedMessage" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success">
+          <div v-if="copiedButton === 'player'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
             {{t.dm_actions.copiedToClipboard}}
           </div>
         </button>
+        <a v-if="!isOnlineMode" class="btn btn-neutral" href="?view=player-simple" :aria-label="t.dm_actions.playerSimpleView"><Icon icon="tabler:presentation" height="24" />{{t.dm_actions.playerSimpleView}}</a>
+        <button
+          v-if="isOnlineMode"
+          class="btn btn-neutral relative"
+          @click="copySimplePlayerUrl"
+          :aria-label="t.dm_actions.copySimplePlayerUrl"
+        >
+         <Icon icon="tabler:presentation" height="24" />
+          {{t.dm_actions.copySimplePlayerUrl}}
+          <div v-if="copiedButton === 'player-simple'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
+            {{ t.dm_actions.copiedToClipboard }}
+  </div>
+       </button>
       </div>
       <div class="flex gap-4">
         <button
