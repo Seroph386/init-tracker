@@ -21,6 +21,24 @@ const nextCombatant = computed(() => {
   const nextIndex = (props.turn + 1) % props.combatants.length;
   return props.combatants[nextIndex] ?? null;
 });
+
+function getCombatantHpClass(combatant: Combatant | null): string {
+  if (!combatant || combatant.totalHP <= 0) {
+    return "text-base-content";
+  }
+
+  const hpRatio = combatant.currentHP / combatant.totalHP;
+
+  if (hpRatio >= 2 / 3) {
+    return "text-success";
+  }
+
+  if (hpRatio >= 1 / 3) {
+    return "text-warning";
+  }
+
+  return "text-error";
+}
 </script>
 
 <template>
@@ -35,7 +53,10 @@ const nextCombatant = computed(() => {
           <h2 class="card-title text-2xl md:text-3xl opacity-70">
             Current Turn
           </h2>
-          <div class="text-5xl md:text-7xl font-bold break-words">
+          <div
+            class="text-5xl md:text-7xl font-bold break-words transition-colors"
+            :class="getCombatantHpClass(currentCombatant)"
+          >
             {{ currentCombatant?.name || "—" }}
           </div>
         </div>
@@ -46,7 +67,10 @@ const nextCombatant = computed(() => {
           <h2 class="card-title text-xl md:text-2xl opacity-70">
             Next Up
           </h2>
-          <div class="text-4xl md:text-6xl font-semibold break-words">
+          <div
+            class="text-4xl md:text-6xl font-semibold break-words transition-colors"
+            :class="getCombatantHpClass(nextCombatant)"
+          >
             {{ nextCombatant?.name || "—" }}
           </div>
         </div>
