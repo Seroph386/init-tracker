@@ -39,7 +39,7 @@ if (missingPackages.length === 0) {
   process.exit(0)
 }
 
-const command = ['install', '--force', '--prefer-offline']
+const command = ['install', '--force', '--prefer-offline', '--ignore-scripts']
 
 if (process.env.NATIVE_DEPS_DRY_RUN === '1') {
   console.log(`pnpm ${command.join(' ')}`)
