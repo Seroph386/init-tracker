@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { join } from 'node:path'
 import { dirname } from 'node:path'
@@ -29,12 +29,26 @@ const packages = [
   `@tailwindcss/oxide-linux-x64-gnu@${readVersionFromPnpmStore('@tailwindcss+oxide@', ['@tailwindcss', 'oxide'])}`,
 ]
 
-const command = ['add', '-D', '--no-save', ...packages]
+const missingPackages = packages.filter((pkg) => {
+  const packageName = pkg.replace(/@[^@]+$/, '').replace('/', '+')
+  return !existsSync(join(pnpmDir, `${packageName}@${pkg.split('@').at(-1)}`))
+})
+
+if (missingPackages.length === 0) {
+  console.log('Linux native dependencies are already present.')
+  process.exit(0)
+}
+
+const command = ['install', '--force', '--prefer-offline']
 
 if (process.env.NATIVE_DEPS_DRY_RUN === '1') {
   console.log(`pnpm ${command.join(' ')}`)
+  console.log(`Missing native packages: ${missingPackages.join(', ')}`)
   process.exit(0)
 }
+
+console.log(`Missing native packages detected: ${missingPackages.join(', ')}`)
+console.log(`pnpm ${command.join(' ')}`)
 
 const result = spawnSync('pnpm', command, {
   cwd: rootDir,
