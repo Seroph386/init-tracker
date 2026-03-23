@@ -1,185 +1,97 @@
 # Security Features
 
-This document explains the security measures implemented in the online multiplayer mode.
+This document explains the current security model for online multiplayer mode.
+
+## Current Model
+
+Online sessions are shared through a built-in Node.js API backed by SQLite. The frontend still uses the same DM/player browser-based separation that existed before the Firebase removal.
 
 ## Player Security
 
 ### 1. Session-Based Access Control
 
-**Problem**: Players could manipulate the URL to access DM view and see hidden combatants or modify combat data.
+**Problem**: Players could try to switch into DM view and reveal hidden combatants.
 
 **Solution**:
-- Each online session is tracked using a security token in the DM's localStorage (`dmSessions` array)
-- When a session is created by the DM, it's registered as a "DM session"
-- Player links (with `?session=xxx&view=player`) are identified as shared links
-- If a session ID exists but is NOT in the DM's `dmSessions` list, the user is forced into read-only player view
+- Each DM-created session ID is stored in browser localStorage under `dmSessions`.
+- If a browser opens a shared `?session=...` link and does not have that session in `dmSessions`, the app forces player view.
+- Shared links remain read-only in the UI.
 
 ### 2. URL Manipulation Protection
 
-**Problem**: Players could remove the `?view=player` parameter to attempt accessing DM view.
+**Problem**: A player could remove `?view=player` from the URL.
 
 **Solution**:
-- A Vue watcher monitors the URL for changes
-- If the session is identified as a player link and `view=player` is removed, the app automatically redirects back with the parameter
-- This happens on every URL change, preventing manual manipulation
+- The app watches the URL.
+- If the browser is not recognized as the DM for that session, the player view parameter is restored automatically.
 
 ### 3. LocalStorage Isolation
 
-**Problem**: Combat data stored in localStorage could be accessed by players via browser DevTools.
+**Problem**: Shared session data should not leak into player localStorage.
 
 **Solution**:
-- **Players**: When viewing a shared session, data is loaded from Firebase only (not from localStorage)
-  - Their own localStorage is preserved (they may be DMs of other sessions)
-  - They can't access the shared session's data locally
-- **DM**: Combat data is backed up to localStorage for offline recovery
-- Players viewing shared links don't write to localStorage for that session
-- This prevents players from:
-  - Seeing hidden combatant data through localStorage
-  - Accessing HP values of visibility=half combatants locally
-  - Having persistent access to session data after closing
+- Players load shared data from the hosted session API only.
+- DMs keep a localStorage backup for recovery.
+- Shared player sessions do not write combat state into localStorage.
 
 ## DM Benefits
 
 ### 1. Offline Backup
 
-Even when using online mode, the DM's data is continuously synced to localStorage. This means:
-- If Firebase goes down, the DM still has all data locally
-- The DM can toggle online mode off and continue with the same combat state
-- Data persists across page refreshes
+While online mode is enabled, the DM browser still keeps local copies of:
+- `turn`
+- `round`
+- `combatants`
 
-### 2. Session Management
+That makes it possible to fall back to offline mode if the hosted service becomes unavailable.
 
-The DM can:
-- Create multiple online sessions (each gets a unique ID)
-- Switch between online and offline mode at will
-- Keep track of which sessions they've created via the `dmSessions` list
+### 2. Self-Hosted Persistence
 
-## How It Works
+Shared state is stored in the app's own SQLite database:
 
-### Creating an Online Session (DM)
-
-1. DM toggles "Online Mode" to ON
-2. App generates a unique session ID (e.g., `abc12345`)
-3. Session ID is registered in localStorage: `dmSessions = ['abc12345']`
-4. URL updates to: `?session=abc12345`
-5. Data syncs to Firebase and localStorage simultaneously
-
-### Joining as Player
-
-1. Player opens shared URL: `?session=abc12345&view=player`
-2. App checks: Is `abc12345` in this browser's `dmSessions`? NO
-3. App identifies this as a shared player link
-4. Data loads from Firebase only (read-only)
-5. Any existing localStorage combat data is cleared
-6. URL watcher prevents removing `view=player` parameter
-
-### Security Flow
-
-```
-Player opens: ?session=abc123&view=player
-    ↓
-Check: Is 'abc123' in localStorage.dmSessions?
-    ↓
-NO → Force Player View (Read-Only)
-    ↓
-Load data from Firebase only (don't use/write localStorage)
-    ↓
-Watch URL: Keep view=player parameter
+```text
+.data/sessions.sqlite
 ```
 
-```
-DM opens: ?session=abc123
-    ↓
-Check: Is 'abc123' in localStorage.dmSessions?
-    ↓
-YES → Allow DM View (Full Control)
-    ↓
-Load data from Firebase
-    ↓
-Sync changes to both Firebase AND localStorage
-```
+This means the app and its online session data can be deployed together.
+
+## Online Session Flow
+
+### Creating an Online Session
+
+1. The DM enables **Online Mode**.
+2. The app generates a unique session ID.
+3. The session ID is stored in the DM browser's `dmSessions` list.
+4. The URL is updated with `?session=...`.
+5. Combat state is synced to the hosted API and persisted in SQLite.
+
+### Joining as a Player
+
+1. A player opens the shared link with `?session=...&view=player`.
+2. The browser checks `dmSessions`.
+3. If the session is not present locally, the browser is treated as a player.
+4. Data is loaded from the hosted API without DM controls.
 
 ## Limitations
 
-### 1. Browser-Specific
+### 1. Browser-Scoped DM Access
 
-The security token (`dmSessions`) is stored in localStorage, which is browser-specific:
-- A DM who creates a session in Chrome can't access it as DM in Firefox
-- This is intentional and prevents accidental DM access from player devices
+DM access is tied to the browser that created the session. If a DM creates a session in one browser and opens it in another, the second browser will not automatically be recognized as the DM.
 
-### 2. Shared Device Access
+### 2. Shared URL Trust Model
 
-If a DM and player use the same browser on the same device:
-- The player could theoretically become a DM for sessions they've accessed
-- **Mitigation**: This is an edge case. In normal use, DMs and players use separate devices
+Right now, anyone with the session URL can read that session, and a determined client could also write to the backing API. The UI protects normal player usage, but there is not yet a server-side auth layer.
 
-### 3. Firebase Rules
+### 3. Shared Device Edge Cases
 
-Current Firebase rules allow anyone with a session ID to read/write:
-```json
-{
-  "rules": {
-    "sessions": {
-      "$sessionId": {
-        ".read": true,
-        ".write": true
-      }
-    }
-  }
-}
-```
+If DM and player use the same browser profile, local session ownership can overlap. Separate devices or private browsing are still recommended for testing.
 
-**For production**: Consider implementing Firebase Authentication for stronger security, with rules like:
-- Only authenticated users can create sessions
-- Players can only read (not write)
-- Sessions expire after X hours
+## Recommended Future Hardening
 
-## Testing Security
+If you want stronger production security, likely next steps are:
 
-### Test 1: Player Cannot Access DM View
-
-1. Create online session as DM
-2. Copy player URL: `?session=xxx&view=player`
-3. Open in incognito window
-4. Try removing `?view=player` from URL
-5. ✅ Should automatically redirect back with `?view=player`
-
-### Test 2: Player Data Isolation
-
-1. Open player link
-2. Make changes in the DM view
-3. Open DevTools → Application → Local Storage in player view
-4. Check for `turn`, `round`, `combatants` keys
-5. ✅ Player's localStorage should NOT update with the shared session data
-6. ✅ Player can still have their own DM sessions in localStorage
-
-### Test 3: DM Data Backup
-
-1. Create online session as DM
-2. Add some combatants
-3. Open DevTools → Application → Local Storage
-4. Check for `turn`, `round`, `combatants` keys
-5. ✅ Should contain current combat data
-
-### Test 4: Session Persistence
-
-1. Create online session as DM
-2. Close and reopen same URL (without `?view=player`)
-3. ✅ Should still be in DM view with full access
-
-## Best Practices
-
-1. **Use separate devices**: Have players access the tracker from their own devices
-2. **Use incognito for testing**: Test player view in incognito to avoid cross-contamination
-3. **Don't share your DM URL**: Only share URLs with `?view=player` parameter
-4. **Clear old sessions**: Periodically clear the `dmSessions` list in localStorage if you create many test sessions
-
-## Future Enhancements
-
-Potential improvements for even stronger security:
-
-1. **Firebase Authentication**: Require login for DMs
-2. **Read-only Firebase rules**: Players can only read data
-3. **Session expiration**: Auto-delete sessions after 24 hours
-4. **Session passwords**: Add optional password protection for sessions
-5. **Activity logging**: Track who accessed which sessions
+1. add DM write tokens
+2. issue read-only player tokens
+3. expire or clean up sessions automatically
+4. add optional password protection
+5. move audit logic to the server side

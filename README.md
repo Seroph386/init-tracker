@@ -1,9 +1,9 @@
 # 🎲 Pathfinder 2e Initiative Tracker
 
-![CI](https://github.com/Valforte/initiative-tracker/workflows/CI/badge.svg)
-![License](https://img.shields.io/github/license/Valforte/initiative-tracker)
-![Version](https://img.shields.io/github/package-json/v/Valforte/initiative-tracker)
-![Stars](https://img.shields.io/github/stars/Valforte/initiative-tracker?style=social)
+![CI](https://github.com/Seroph386/init-tracker/workflows/CI/badge.svg)
+![License](https://img.shields.io/github/license/Seroph386/init-tracker)
+![Version](https://img.shields.io/github/package-json/v/Seroph386/init-tracker)
+![Stars](https://img.shields.io/github/stars/Seroph386/init-tracker?style=social)
 
 A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views. Built with Vue 3, TypeScript, and Tailwind CSS. 
 
@@ -48,7 +48,7 @@ or
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using the built-in hosted SQLite service - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -69,7 +69,7 @@ or
 - See only combatants the DM has made visible
 - View HP bars and conditions (respecting visibility settings)
 - Click conditions to see descriptions (when available)
-- Real-time updates via localStorage synchronization
+- Real-time updates in offline mode via localStorage and in online mode via the hosted SQLite session service
 
 ## Technology Stack
 
@@ -84,24 +84,31 @@ or
 ## Installation
 
 ### Prerequisites
-- Node.js (v18 or higher recommended)
+- Node.js (v20 or higher recommended)
+- sqlite3 CLI available on the host for online mode
 - pnpm (or npm/yarn)
 
 ### Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/Valforte/initiative-tracker.git
+git clone https://github.com/Seroph386/init-tracker.git
 cd initiative-tracker
 
 # Install dependencies
 pnpm install
 
-# Start development server
+# Start the frontend dev server
 pnpm dev
 ```
 
-The app will be available at `http://localhost:5173`
+The app will be available at `http://localhost:5173`.
+
+To test self-hosted online mode locally, also run the built-in API server in a second terminal:
+
+```bash
+pnpm dev:api
+```
 
 ### Build for Production
 
@@ -113,7 +120,7 @@ pnpm build
 pnpm preview
 ```
 
-Build output is generated in the `./docs` directory (configured for GitHub Pages deployment).
+Build output is generated in the `./dist` directory.
 
 ## Usage
 
@@ -163,7 +170,7 @@ Players will see:
 - Current turn highlighted
 - No controls or hidden information
 
-**Tip**: Open the player view on a separate screen. Both views share the same localStorage, so changes update in real-time.
+**Tip**: Open the player view on a separate screen. In offline mode both views share localStorage; in online mode they sync through the hosted session server.
 
 ### Online Mode (Optional)
 
@@ -173,7 +180,7 @@ Enable real-time multiplayer sync to share combat sessions with remote players:
 2. **Share URL**: Click "Copy Player URL" and send it to your players
 3. **Real-time Sync**: All changes are instantly visible to all connected players
 
-See the [Quick Start Guide](docs/ONLINE_MODE_QUICK_START.md) for setup instructions (takes ~15 minutes).
+See the [Quick Start Guide](docs/ONLINE_MODE_QUICK_START.md) for the built-in self-hosted setup.
 
 **Benefits**:
 - Perfect for remote/hybrid games
@@ -210,11 +217,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Icons by [Iconify](https://iconify.design/)
 - Monster data from Pathfinder 2e Monster Core and Age of Ashes Adventure Path
 - Inspired by the need for a clean, modern initiative tracker for in-person play
+- Original project: [Initiative-Tracker by Valforte](https://github.com/Valforte/initiative-tracker)
 
 ## Support
 
 If you encounter any issues or have suggestions:
-- Open an issue on [GitHub Issues](https://github.com/Valforte/initiative-tracker/issues)
+- Open an issue on [GitHub Issues](https://github.com/Seroph386/init-tracker/issues)
 - Check existing issues to avoid duplicates
 - Provide as much detail as possible (browser, steps to reproduce, screenshots)
 

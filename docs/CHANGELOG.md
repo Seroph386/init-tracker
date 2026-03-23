@@ -43,5 +43,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts and accessibility features
 - Real-time synchronization between DM and player views
 
-[Unreleased]: https://github.com/Valforte/initiative-tracker/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/Valforte/initiative-tracker/releases/tag/v1.0.0
+[Unreleased]: https://github.com/Seroph386/init-tracker/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Seroph386/init-tracker/releases/tag/v1.0.0

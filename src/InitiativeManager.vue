@@ -5,7 +5,7 @@ import {useStorage} from "@vueuse/core";
 import DMView from "./DMView.vue";
 import PlayerView from "./PlayerView.vue";
 import PlayerSimpleView from "./PlayerSimpleView.vue";
-import {useFirebaseSync, isFirebaseReady, generateSessionId, waitForFirebase} from "./firebase.ts";
+import {useHostedSessionSync, isHostedDatabaseReady, generateSessionId, waitForHostedDatabase} from "./onlineSession.ts";
 import type {GameSystem} from "./db.ts";
 
 // Check URL for session ID and view mode
@@ -50,59 +50,88 @@ watch([sessionId, () => window.location.search], () => {
 // Get game system setting
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
 
-// Custom serializer for Combatant objects
-const combatantSerializer = {
-  read: (v: any) => {
-    if (v) {
-      let parsedItems = Array.isArray(v) ? v : JSON.parse(v)
-      return parsedItems.map((combatant: any) => {
-        return new Combatant(
+type SessionState = {
+  turn: number
+  round: number
+  combatants: Combatant[]
+}
+
+// Custom serializer for session state stored in SQLite
+const sessionStateSerializer = {
+  read: (value: any): SessionState => {
+    const combatants = Array.isArray(value?.combatants) ? value.combatants : []
+
+    return {
+      turn: typeof value?.turn === 'number' ? value.turn : 0,
+      round: typeof value?.round === 'number' ? value.round : 1,
+      combatants: combatants.length > 0
+        ? combatants.map((combatant: any) => new Combatant(
           combatant.name,
           combatant.totalHP,
           combatant.initiative,
           combatant.currentHP,
-          (combatant.conditions || []).map((condition: any) => {
-            return new Condition(condition.name, condition.value)
-          }),
+          (combatant.conditions || []).map((condition: any) => new Condition(condition.name, condition.value)),
           combatant.visibility,
           combatant.tempHP || 0,
           combatant.maxTempHP || 0
-        )
-      })
+        ))
+        : getDefaultCombatants(gameSystem.value)
     }
-    return getDefaultCombatants(gameSystem.value)
   },
-  write: (v: any) => v // Firebase handles JSON serialization
+  write: (value: SessionState) => ({
+    turn: value.turn,
+    round: value.round,
+    combatants: value.combatants
+  })
 }
 
 /**
- * State management that switches between localStorage (offline) and Firebase (online)
+ * State management that switches between localStorage (offline) and the hosted SQLite session API (online)
  */
 let _turn: any = null
 let _round: any = null
 let _combatants: any = null
+let _sessionState: any = null
 const isInitialized = ref(false)
 
 const turn = computed({
-  get: () => _turn?.value ?? 0,
-  set: (v) => { if (_turn) _turn.value = v }
+  get: () => _sessionState?.value?.turn ?? _turn?.value ?? 0,
+  set: (v) => {
+    if (_sessionState?.value) {
+      _sessionState.value.turn = v
+    } else if (_turn) {
+      _turn.value = v
+    }
+  }
 })
 
 const round = computed({
-  get: () => _round?.value ?? 1,
-  set: (v) => { if (_round) _round.value = v }
+  get: () => _sessionState?.value?.round ?? _round?.value ?? 1,
+  set: (v) => {
+    if (_sessionState?.value) {
+      _sessionState.value.round = v
+    } else if (_round) {
+      _round.value = v
+    }
+  }
 })
 
 const combatants = computed({
-  get: () => _combatants?.value ?? [],
-  set: (v) => { if (_combatants) _combatants.value = v }
+  get: () => _sessionState?.value?.combatants ?? _combatants?.value ?? [],
+  set: (v) => {
+    if (_sessionState?.value) {
+      _sessionState.value.combatants = v
+    } else if (_combatants) {
+      _combatants.value = v
+    }
+  }
 })
 
-// Initialize state - this will be set in onMounted after Firebase is ready
+// Initialize state after the hosted database availability check runs
 function initializeState() {
-  const shouldUseFirebase = isOnlineMode.value && sessionId.value && isFirebaseReady()
+  const shouldUseHostedDatabase = isOnlineMode.value && sessionId.value && isHostedDatabaseReady()
 
-  if (shouldUseFirebase) {
+  if (shouldUseHostedDatabase) {
     // For DM: Load existing localStorage data to use as defaults
     let defaultTurn = 0
     let defaultRound = 1
@@ -140,36 +169,28 @@ function initializeState() {
       }
     }
 
-    // Online mode with Firebase - use localStorage data as defaults
-    // Track when all Firebase data is loaded
-    let loadedCount = 0
-    const totalToLoad = 3
-    const markAsLoadedIfReady = () => {
-      loadedCount++
-      if (loadedCount === totalToLoad) {
-        isInitialized.value = true
+    _sessionState = useHostedSessionSync(
+      sessionId.value,
+      {
+        turn: defaultTurn,
+        round: defaultRound,
+        combatants: defaultCombatantsData
+      },
+      {
+        serializer: sessionStateSerializer,
+        readOnly: isSharedPlayerLink.value,
+        onReady: () => {
+          isInitialized.value = true
+        }
       }
-    }
-
-    _turn = useFirebaseSync(`sessions/${sessionId.value}/turn`, defaultTurn, undefined, markAsLoadedIfReady)
-    _round = useFirebaseSync(`sessions/${sessionId.value}/round`, defaultRound, undefined, markAsLoadedIfReady)
-    _combatants = useFirebaseSync(
-      `sessions/${sessionId.value}/combatants`,
-      defaultCombatantsData,
-      combatantSerializer,
-      markAsLoadedIfReady
     )
 
     // For DM: Also sync to localStorage as backup (but not for players)
     if (isDMView.value && !isSharedPlayerLink.value) {
-      watch(_turn, (newValue) => {
-        localStorage.setItem('turn', JSON.stringify(newValue))
-      })
-      watch(_round, (newValue) => {
-        localStorage.setItem('round', JSON.stringify(newValue))
-      })
-      watch(_combatants, (newValue) => {
-        localStorage.setItem('combatants', JSON.stringify(newValue))
+      watch(_sessionState, (newValue: SessionState) => {
+        localStorage.setItem('turn', JSON.stringify(newValue.turn))
+        localStorage.setItem('round', JSON.stringify(newValue.round))
+        localStorage.setItem('combatants', JSON.stringify(newValue.combatants))
       }, { deep: true })
     }
   } else {
@@ -211,16 +232,16 @@ function initializeState() {
     isInitialized.value = true
   }
 
-  // Note: For online mode, isInitialized is set in markAsLoadedIfReady callback
+  // Note: For online mode, isInitialized is set by the hosted session sync callback
 }
 
-// Wait for Firebase to initialize, then set up state
+// Wait for the hosted database to initialize, then set up state
 onMounted(async () => {
-  // If online mode, wait for Firebase to be ready
+  // If online mode, wait for the hosted SQLite API to be ready
   if (isOnlineMode.value && sessionId.value) {
-    const firebaseReady = await waitForFirebase(5000)
-    if (!firebaseReady) {
-      console.error('Firebase failed to initialize within timeout')
+    const databaseReady = await waitForHostedDatabase(5000)
+    if (!databaseReady) {
+      console.error('Hosted database failed to initialize within timeout')
     }
   }
 
@@ -229,6 +250,11 @@ onMounted(async () => {
 
 // Function to enable online mode (called from DM view toggle)
 function enableOnlineMode() {
+  if (!isHostedDatabaseReady()) {
+    console.error('Hosted database is not available, so online mode cannot be enabled.')
+    return
+  }
+
   if (!sessionId.value && isDMView.value) {
     // Generate new session ID when enabling online mode
     const newSessionId = generateSessionId()
@@ -245,7 +271,7 @@ function enableOnlineMode() {
     url.searchParams.delete('view')
     window.history.pushState({}, '', url.toString())
 
-    // Reload to reinitialize with Firebase
+    // Reload to reinitialize with the hosted session API
     window.location.reload()
   }
 }
