@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import {ref, computed} from "vue";
-import {colorIsDark, Combatant, Visibility} from "./functions.ts";
+import {colorIsDark, Combatant, getHpProgressClass, Visibility} from "./functions.ts";
 import { Icon } from "@iconify/vue";
 import {useStorage} from "@vueuse/core";
 import {
@@ -134,11 +134,7 @@ function removeCombatant(i: number): void {
             />
             <progress
               class="progress h-6 w-full"
-              :class="{
-                'progress-success': combatant.currentHP / combatant.totalHP >= 2/3,
-                'progress-warning': combatant.currentHP / combatant.totalHP < 2/3 && combatant.currentHP / combatant.totalHP >= 1/3,
-                'progress-error': combatant.currentHP / combatant.totalHP < 1/3,
-              }"
+              :class="getHpProgressClass(combatant)"
               :value="combatant.currentHP"
               :max="combatant.totalHP"
             />

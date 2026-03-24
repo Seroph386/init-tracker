@@ -19,14 +19,14 @@ const dmSessions = useStorage<string[]>('dmSessions', [])
 // Security: Determine view mode
 // - If session exists and NOT in dmSessions, force player view (read-only)
 // - If session exists and IS in dmSessions, allow DM view
-// - If no session but view=player or view=player-simple in URL, show player view (offline mode)
+// - If no session but view=player/on-deck (or legacy player-simple) in URL, show player view (offline mode)
 // - Otherwise, default DM view
 const isSharedPlayerLink = computed(() => {
   return !!sessionId.value && !dmSessions.value.includes(sessionId.value)
 })
 
 const viewMode = urlParams.get('view') || ''
-const isPlayerViewParam = viewMode === 'player' || viewMode === 'player-simple'
+const isPlayerViewParam = viewMode === 'player' || viewMode === 'on-deck' || viewMode === 'player-simple'
 const isDMView = ref<boolean>(!isSharedPlayerLink.value && !isPlayerViewParam)
 
 // Online mode is active when there's a session ID in the URL
@@ -38,7 +38,7 @@ watch([sessionId, () => window.location.search], () => {
     const currentParams = new URLSearchParams(window.location.search)
     const currentView = currentParams.get('view')
 
-    if (currentView !== 'player' && currentView !== 'player-simple') {
+    if (currentView !== 'player' && currentView !== 'on-deck' && currentView !== 'player-simple') {
       // Force default player view for shared sessions if invalid/missing
       const url = new URL(window.location.href)
       url.searchParams.set('view', 'player')
@@ -367,7 +367,7 @@ function resetToDefaults(): void {
   />
 
   <PlayerSimpleView
-      v-else-if="viewMode === 'player-simple'"
+      v-else-if="viewMode === 'on-deck' || viewMode === 'player-simple'"
       :turn="turn"
       :round="round"
       :combatants="orderedCombatants"
