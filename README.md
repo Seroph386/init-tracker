@@ -150,7 +150,7 @@ When you open the app normally, you'll see the DM interface with full controls:
    - Click "New Combat" to reset round and turn counters
 
 ### Player View
-To display the player view, add `?view=player` to the URL or simply click the Player View button:
+To display the standard player table view, add `?view=player` to the URL or click the Player View button:
 ```
 http://localhost:5173/?view=player
 ```
@@ -164,6 +164,24 @@ Players will see:
 - No controls or hidden information
 
 **Tip**: Open the player view on a separate screen. Both views share the same localStorage, so changes update in real-time.
+
+### On-Deck View
+Use On-Deck mode when you want a cleaner presentation screen that only emphasizes the current turn and who is next:
+```
+http://localhost:5173/?view=on-deck
+```
+
+You can open it in one of two ways:
+- Click the **On-Deck View** button from the DM interface when playing locally
+- Copy the generated On-Deck URL in online mode and share that link with a display device or stream overlay
+
+On-Deck mode shows:
+- The current round
+- The active combatant in large text
+- The next combatant underneath
+- Name colors that reflect each visible combatant's current HP state when HP is visible to players
+
+This mode works especially well for TVs, projectors, and OBS/browser-source overlays where the full initiative table would be too busy.
 
 ### Online Mode (Optional)
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {colorIsDark, Combatant, Visibility} from "./functions.ts";
+import {colorIsDark, Combatant, getHpProgressClass, Visibility} from "./functions.ts";
 import {useConditions} from "./db.ts";
 import { Icon } from "@iconify/vue";
 import {ref} from "vue";
@@ -87,11 +87,7 @@ function hideConditionTooltip(): void {
               />
               <progress
                 class="progress h-6 w-full"
-                :class="{
-                  'progress-success': combatant.currentHP / combatant.totalHP >= 2/3,
-                  'progress-warning': combatant.currentHP / combatant.totalHP < 2/3 && combatant.currentHP / combatant.totalHP >= 1/3,
-                  'progress-error': combatant.currentHP / combatant.totalHP < 1/3,
-                }"
+                :class="getHpProgressClass(combatant)"
                 :value="combatant.visibility == Visibility.Full ? combatant.currentHP : 0"
                 :max="combatant.totalHP"
               />

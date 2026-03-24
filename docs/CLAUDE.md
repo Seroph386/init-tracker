@@ -54,10 +54,11 @@ State is managed using VueUse's `useStorage` composable for localStorage persist
 ### Component Structure
 
 - **App.vue**: Root component with theme/language selectors
-- **InitiativeManager.vue**: State container that routes to DM or Player view based on URL param `?view=player`
+- **InitiativeManager.vue**: State container that routes to DM, Player, or On-Deck views based on URL params like `?view=player` and `?view=on-deck`
 - **DMView.vue**: DM interface with full controls
 - **DMTable.vue**: DM combat table with HP/condition management
 - **PlayerView.vue**: Read-only player interface
+- **PlayerSimpleView.vue**: Minimal On-Deck presentation view focused on the current and next combatants
 - **PlayerTable.vue**: Player-facing combat table
 
 ### Database Files (src/db.ts)
@@ -72,7 +73,7 @@ Structured translation object supporting English and Brazilian Portuguese. All U
 
 ## Key Features
 
-1. **Dual Views**: DM view with full controls vs player view (toggle via `?view=player` URL param)
+1. **View Modes**: DM view, standard player table view (`?view=player`), and On-Deck presentation view (`?view=on-deck`)
 2. **Visibility System**: Three-tier visibility (hidden, name-only, full HP) controlled per combatant
 3. **Condition Tracking**: Auto-colored condition badges with value management
 4. **HP Management**: Increment/decrement controls with configurable step value
