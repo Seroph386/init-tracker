@@ -39,7 +39,7 @@ const props = defineProps<{
   sessionId: string,
 }>()
 
-const copiedButton = ref<'player' | 'player-simple' | null>(null)
+const copiedButton = ref<'player' | 'on-deck' | null>(null)
 let copiedMessageTimeout: ReturnType<typeof setTimeout> | null = null
 const showResetConfirm = ref(false)
 const isSettingsOpen = ref(false)
@@ -162,16 +162,16 @@ async function copyPlayerUrl(): Promise<void> {
     console.error('Failed to copy URL:', err)
   }
 }
-async function copySimplePlayerUrl(): Promise<void> {
+async function copyOnDeckUrl(): Promise<void> {
   if (!props.sessionId) return
 
   const url = new URL(window.location.href)
   url.searchParams.set('session', props.sessionId)
-  url.searchParams.set('view', 'player-simple')
+  url.searchParams.set('view', 'on-deck')
 
   try {
     await navigator.clipboard.writeText(url.toString())
-    copiedButton.value = 'player-simple'
+    copiedButton.value = 'on-deck'
 
     if (copiedMessageTimeout) {
       clearTimeout(copiedMessageTimeout)
@@ -211,16 +211,16 @@ async function copySimplePlayerUrl(): Promise<void> {
             {{t.dm_actions.copiedToClipboard}}
           </div>
         </button>
-        <a v-if="!isOnlineMode" class="btn btn-neutral" href="?view=player-simple" :aria-label="t.dm_actions.playerSimpleView"><Icon icon="tabler:presentation" height="24" />{{t.dm_actions.playerSimpleView}}</a>
+        <a v-if="!isOnlineMode" class="btn btn-neutral" href="?view=on-deck" :aria-label="t.dm_actions.onDeckView"><Icon icon="tabler:presentation" height="24" />{{t.dm_actions.onDeckView}}</a>
         <button
           v-if="isOnlineMode"
           class="btn btn-neutral relative"
-          @click="copySimplePlayerUrl"
-          :aria-label="t.dm_actions.copySimplePlayerUrl"
+          @click="copyOnDeckUrl"
+          :aria-label="t.dm_actions.copyOnDeckUrl"
         >
          <Icon icon="tabler:presentation" height="24" />
-          {{t.dm_actions.copySimplePlayerUrl}}
-          <div v-if="copiedButton === 'player-simple'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
+          {{t.dm_actions.copyOnDeckUrl}}
+          <div v-if="copiedButton === 'on-deck'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
             {{ t.dm_actions.copiedToClipboard }}
   </div>
        </button>

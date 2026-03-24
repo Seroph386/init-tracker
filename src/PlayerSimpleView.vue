@@ -55,7 +55,7 @@ function getVisibleHpTextClass(combatant: Combatant | null): string {
       <div class="card bg-base-100 shadow-xl border border-base-300">
         <div class="card-body items-center text-center">
           <h2 class="card-title text-xl md:text-2xl opacity-70">
-            Next Up
+            On Deck
           </h2>
           <div
             class="text-4xl md:text-6xl font-semibold break-words transition-colors"

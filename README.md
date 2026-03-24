@@ -165,17 +165,17 @@ Players will see:
 
 **Tip**: Open the player view on a separate screen. Both views share the same localStorage, so changes update in real-time.
 
-### Player-Simple View
-Use Player-Simple mode when you want a cleaner presentation screen that only emphasizes the current turn and who is next:
+### On-Deck View
+Use On-Deck mode when you want a cleaner presentation screen that only emphasizes the current turn and who is next:
 ```
-http://localhost:5173/?view=player-simple
+http://localhost:5173/?view=on-deck
 ```
 
 You can open it in one of two ways:
-- Click the **Player-Simple View** button from the DM interface when playing locally
-- Copy the generated Player-Simple URL in online mode and share that link with a display device or stream overlay
+- Click the **On-Deck View** button from the DM interface when playing locally
+- Copy the generated On-Deck URL in online mode and share that link with a display device or stream overlay
 
-Player-Simple mode shows:
+On-Deck mode shows:
 - The current round
 - The active combatant in large text
 - The next combatant underneath
