@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Combatant, getHpTextClass, Visibility } from "./functions.ts";
+import { colorIsDark, Combatant, getHpTextClass, Visibility } from "./functions.ts";
 import { useTranslations } from "./lang.ts";
 
 const { t } = useTranslations();
@@ -29,6 +29,10 @@ function getVisibleHpTextClass(combatant: Combatant | null): string {
 
   return getHpTextClass(combatant);
 }
+
+function formatConditionLabel(name: string, value: number): string {
+  return value > 1 ? `${name} ${value}` : name;
+}
 </script>
 
 <template>
@@ -49,6 +53,21 @@ function getVisibleHpTextClass(combatant: Combatant | null): string {
           >
             {{ currentCombatant?.name || "—" }}
           </div>
+          <div
+            v-if="currentCombatant?.conditions?.length"
+            class="mt-4 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span
+              v-for="condition in currentCombatant.conditions"
+              :key="`${currentCombatant.name}-${condition.name}`"
+              :class="['badge badge-lg md:badge-xl px-4 py-3', {
+                'text-accent-content': !colorIsDark(condition.color),
+              }]"
+              :style="{ backgroundColor: condition.color }"
+            >
+              {{ formatConditionLabel(condition.name, condition.value) }}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -62,6 +81,21 @@ function getVisibleHpTextClass(combatant: Combatant | null): string {
             :class="getVisibleHpTextClass(nextCombatant)"
           >
             {{ nextCombatant?.name || "—" }}
+          </div>
+          <div
+            v-if="nextCombatant?.conditions?.length"
+            class="mt-4 flex flex-wrap items-center justify-center gap-2"
+          >
+            <span
+              v-for="condition in nextCombatant.conditions"
+              :key="`${nextCombatant.name}-${condition.name}`"
+              :class="['badge badge-lg px-4 py-3', {
+                'text-accent-content': !colorIsDark(condition.color),
+              }]"
+              :style="{ backgroundColor: condition.color }"
+            >
+              {{ formatConditionLabel(condition.name, condition.value) }}
+            </span>
           </div>
         </div>
       </div>
