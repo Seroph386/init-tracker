@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Combatant } from "./functions.ts";
+import { Combatant, getHpTextClass, Visibility } from "./functions.ts";
 import { useTranslations } from "./lang.ts";
 
 const { t } = useTranslations();
@@ -22,22 +22,12 @@ const nextCombatant = computed(() => {
   return props.combatants[nextIndex] ?? null;
 });
 
-function getCombatantHpClass(combatant: Combatant | null): string {
-  if (!combatant || combatant.totalHP <= 0) {
+function getVisibleHpTextClass(combatant: Combatant | null): string {
+  if (!combatant || combatant.visibility !== Visibility.Full) {
     return "text-base-content";
   }
 
-  const hpRatio = combatant.currentHP / combatant.totalHP;
-
-  if (hpRatio >= 2 / 3) {
-    return "text-success";
-  }
-
-  if (hpRatio >= 1 / 3) {
-    return "text-warning";
-  }
-
-  return "text-error";
+  return getHpTextClass(combatant);
 }
 </script>
 
@@ -55,7 +45,7 @@ function getCombatantHpClass(combatant: Combatant | null): string {
           </h2>
           <div
             class="text-5xl md:text-7xl font-bold break-words transition-colors"
-            :class="getCombatantHpClass(currentCombatant)"
+            :class="getVisibleHpTextClass(currentCombatant)"
           >
             {{ currentCombatant?.name || "—" }}
           </div>
@@ -69,7 +59,7 @@ function getCombatantHpClass(combatant: Combatant | null): string {
           </h2>
           <div
             class="text-4xl md:text-6xl font-semibold break-words transition-colors"
-            :class="getCombatantHpClass(nextCombatant)"
+            :class="getVisibleHpTextClass(nextCombatant)"
           >
             {{ nextCombatant?.name || "—" }}
           </div>

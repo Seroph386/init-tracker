@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Combatant, Condition, Visibility, colorIsDark } from './functions'
+import { Combatant, Condition, Visibility, colorIsDark, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass } from './functions'
 
 describe('Condition', () => {
   it('should create a condition with default value of 1', () => {
@@ -153,6 +153,29 @@ describe('Combatant - Conditions', () => {
     combatant.changeConditionValue()
     expect(combatant.conditions[0].value).toBe(1)
     expect(combatant.conditions[1].value).toBe(2)
+  })
+})
+
+
+describe('HP status helpers', () => {
+  it('should calculate HP ratios safely', () => {
+    expect(getHpRatio(new Combatant('Healthy', 30, 10, 20))).toBeCloseTo(2 / 3)
+    expect(getHpRatio(new Combatant('Invalid', 0, 10, 0))).toBe(0)
+  })
+
+  it('should classify HP status using the shared thresholds', () => {
+    expect(getHpStatus(new Combatant('Healthy', 30, 10, 25))).toBe('healthy')
+    expect(getHpStatus(new Combatant('Wounded', 30, 10, 15))).toBe('wounded')
+    expect(getHpStatus(new Combatant('Critical', 30, 10, 5))).toBe('critical')
+  })
+
+  it('should map HP status to text and progress classes', () => {
+    const woundedCombatant = new Combatant('Wounded', 30, 10, 15)
+    const criticalCombatant = new Combatant('Critical', 30, 10, 5)
+
+    expect(getHpTextClass(woundedCombatant)).toBe('text-warning')
+    expect(getHpTextClass(null)).toBe('text-base-content')
+    expect(getHpProgressClass(criticalCombatant)).toBe('progress-error')
   })
 })
 

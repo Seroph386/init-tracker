@@ -222,6 +222,48 @@ const defaultCombatants = defaultPathfinderCombatants
  * @param bgColor - Hex color string with or without # prefix
  * @returns true if the color is dark (luminance <= 100)
  */
+function getHpRatio(combatant: Pick<Combatant, "currentHP" | "totalHP">): number {
+    if (combatant.totalHP <= 0) {
+        return 0
+    }
+
+    return combatant.currentHP / combatant.totalHP
+}
+
+function getHpStatus(combatant: Pick<Combatant, "currentHP" | "totalHP">): "healthy" | "wounded" | "critical" {
+    const hpRatio = getHpRatio(combatant)
+
+    if (hpRatio >= 2 / 3) {
+        return "healthy"
+    }
+
+    if (hpRatio >= 1 / 3) {
+        return "wounded"
+    }
+
+    return "critical"
+}
+
+function getHpTextClass(combatant: Pick<Combatant, "currentHP" | "totalHP"> | null): string {
+    if (!combatant || combatant.totalHP <= 0) {
+        return "text-base-content"
+    }
+
+    return {
+        healthy: "text-success",
+        wounded: "text-warning",
+        critical: "text-error",
+    }[getHpStatus(combatant)]
+}
+
+function getHpProgressClass(combatant: Pick<Combatant, "currentHP" | "totalHP">): string {
+    return {
+        healthy: "progress-success",
+        wounded: "progress-warning",
+        critical: "progress-error",
+    }[getHpStatus(combatant)]
+}
+
 function colorIsDark(bgColor: string): boolean {
     let color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
     let r = parseInt(color.substring(0, 2), 16); // hexToR
@@ -230,4 +272,4 @@ function colorIsDark(bgColor: string): boolean {
     return ((r * 0.299) + (g * 0.587) + (b * 0.114)) <= 100;
 }
 
-export {colorIsDark, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+export {colorIsDark, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}

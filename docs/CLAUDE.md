@@ -54,10 +54,11 @@ State is managed using VueUse's `useStorage` composable for localStorage persist
 ### Component Structure
 
 - **App.vue**: Root component with theme/language selectors
-- **InitiativeManager.vue**: State container that routes to DM or Player view based on URL param `?view=player`
+- **InitiativeManager.vue**: State container that routes to DM, Player, or Player-Simple views based on URL params like `?view=player` and `?view=player-simple`
 - **DMView.vue**: DM interface with full controls
 - **DMTable.vue**: DM combat table with HP/condition management
 - **PlayerView.vue**: Read-only player interface
+- **PlayerSimpleView.vue**: Minimal presentation view focused on the current and next combatants
 - **PlayerTable.vue**: Player-facing combat table
 
 ### Database Files (src/db.ts)
@@ -72,13 +73,14 @@ Structured translation object supporting English and Brazilian Portuguese. All U
 
 ## Key Features
 
-1. **Dual Views**: DM view with full controls vs player view (toggle via `?view=player` URL param)
+1. **View Modes**: DM view, standard player table view (`?view=player`), and Player-Simple presentation view (`?view=player-simple`)
 2. **Visibility System**: Three-tier visibility (hidden, name-only, full HP) controlled per combatant
-3. **Condition Tracking**: Auto-colored condition badges with value management
-4. **HP Management**: Increment/decrement controls with configurable step value
-5. **Turn Management**: Automatic turn advancement that respects visibility settings
-6. **Theme System**: 35+ DaisyUI themes with live preview
-7. **LocalStorage Persistence**: All combat state persists automatically
+3. **Presentation Modes**: Standard player table view and Player-Simple mode for projector/TV displays
+4. **Condition Tracking**: Auto-colored condition badges with value management
+5. **HP Management**: Increment/decrement controls with configurable step value
+6. **Turn Management**: Automatic turn advancement that respects visibility settings
+7. **Theme System**: 35+ DaisyUI themes with live preview
+8. **LocalStorage Persistence**: All combat state persists automatically
 
 ## Working with Combatants
 
