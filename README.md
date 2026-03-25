@@ -48,7 +48,7 @@ or
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -188,16 +188,20 @@ This mode works especially well for TVs, projectors, and OBS/browser-source over
 Enable real-time multiplayer sync to share combat sessions with remote players:
 
 1. **Toggle Online Mode**: Click the "Online Mode" toggle in the DM view
-2. **Share URL**: Click "Copy Player URL" and send it to your players
-3. **Real-time Sync**: All changes are instantly visible to all connected players
+2. **Choose Backend**: Select Firebase or SQLite in Settings before enabling it
+3. **Share URL**: Click "Copy Player URL" and send it to your players
+4. **Real-time Sync**: All changes are instantly visible to all connected players
 
-See the [Quick Start Guide](docs/ONLINE_MODE_QUICK_START.md) for setup instructions (takes ~15 minutes).
+Setup guides:
+- [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md)
+- [Self-Hosted SQLite Setup](docs/SELF_HOSTED_SQLITE.md)
 
 **Benefits**:
 - Perfect for remote/hybrid games
 - No need for screen sharing
 - Players get their own clean interface
 - Works alongside in-person play
+- Can be fully self-hosted without depending on Google/Firebase
 
 ### Multi-Table Setup
 If you need to run multiple tables simultaneously:

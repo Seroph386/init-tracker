@@ -19,6 +19,7 @@ import {
 import {getEnabledMonsters, getDefaultEnabledSources, type Monster, type GameSystem} from "./db.ts";
 import {useStorage} from "@vueuse/core";
 import {computed, watch} from "vue";
+import type {OnlineProvider} from "./online.ts";
 
 const { t } = useTranslations()
 
@@ -29,6 +30,7 @@ const emit = defineEmits<{
   (e: 'newCombatant', name: string, HP: number, initiative: number, visibility: Visibility): void
   (e: 'removeCombatant', index: number): void
   (e: 'toggleOnlineMode', value: boolean): void
+  (e: 'setOnlineProvider', value: OnlineProvider): void
 }>()
 
 const props = defineProps<{
@@ -37,6 +39,9 @@ const props = defineProps<{
   combatants: Combatant[],
   isOnlineMode: boolean,
   sessionId: string,
+  onlineProvider: OnlineProvider | '',
+  availableOnlineProviders: OnlineProvider[],
+  isOnlineAvailable: boolean,
 }>()
 
 const copiedButton = ref<'player' | 'on-deck' | null>(null)
@@ -145,6 +150,9 @@ async function copyPlayerUrl(): Promise<void> {
   const url = new URL(window.location.href)
   url.searchParams.set('session', props.sessionId)
   url.searchParams.set('view', 'player')
+  if (props.onlineProvider) {
+    url.searchParams.set('backend', props.onlineProvider)
+  }
 
   try {
     await navigator.clipboard.writeText(url.toString())
@@ -168,6 +176,9 @@ async function copyOnDeckUrl(): Promise<void> {
   const url = new URL(window.location.href)
   url.searchParams.set('session', props.sessionId)
   url.searchParams.set('view', 'on-deck')
+  if (props.onlineProvider) {
+    url.searchParams.set('backend', props.onlineProvider)
+  }
 
   try {
     await navigator.clipboard.writeText(url.toString())
@@ -318,7 +329,11 @@ async function copyOnDeckUrl(): Promise<void> {
     :sessionId="sessionId"
     :isDMView="true"
     :isOpen="isSettingsOpen"
+    :onlineProvider="onlineProvider"
+    :availableOnlineProviders="availableOnlineProviders"
+    :isOnlineAvailable="isOnlineAvailable"
     @toggleOnlineMode="(value) => $emit('toggleOnlineMode', value)"
+    @setOnlineProvider="(value) => $emit('setOnlineProvider', value)"
     @requestReset="requestReset"
     @close="isSettingsOpen = false"
   />
