@@ -48,7 +48,7 @@ or
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server, including a single-container Docker Compose deployment - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -113,7 +113,37 @@ pnpm build
 pnpm preview
 ```
 
-Build output is generated in the `./docs` directory (configured for GitHub Pages deployment).
+Build output is generated in the `./dist` directory.
+
+### Run with Docker Compose
+
+The fastest self-hosted setup is a single container that serves the built app and stores online sessions in SQLite:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8787`.
+
+This starts:
+- The frontend app
+- The SQLite realtime sync server
+- A persistent Docker volume for the SQLite database
+
+The bundled frontend is built with `VITE_SQLITE_SYNC_URL=/`, so enabling online mode in the Docker deployment uses the same container for both the UI and SQLite sync API.
+
+See [docs/SELF_HOSTED_SQLITE.md](docs/SELF_HOSTED_SQLITE.md) for environment variables, volume details, and deployment notes.
+
+### Pull a Published Image
+
+If you publish the container through GitHub Actions, you can pull it from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/valforte/initiative-tracker:latest
+docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/valforte/initiative-tracker:latest
+```
+
+If you are publishing from a fork, replace `valforte/initiative-tracker` with your own GitHub `owner/repo`.
 
 ## Usage
 

@@ -1,0 +1,44 @@
+FROM node:24-bookworm-slim AS builder
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY scripts ./scripts
+
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+
+ARG VITE_APP_BASE_PATH=/
+ARG VITE_SQLITE_SYNC_URL=
+
+ENV VITE_APP_BASE_PATH=${VITE_APP_BASE_PATH}
+ENV VITE_SQLITE_SYNC_URL=${VITE_SQLITE_SYNC_URL}
+
+RUN pnpm build
+
+FROM node:24-bookworm-slim AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /app/server ./server
+COPY --from=builder /app/dist ./dist
+
+RUN mkdir -p /app/data && chown -R node:node /app
+
+ENV NODE_ENV=production
+ENV SQLITE_SYNC_HOST=0.0.0.0
+ENV SQLITE_SYNC_PORT=8787
+ENV SQLITE_SYNC_DB_PATH=/app/data/initiative-tracker.sqlite
+ENV SQLITE_SYNC_STATIC_DIR=/app/dist
+ENV SQLITE_SYNC_STATIC_BASE_PATH=/
+
+VOLUME ["/app/data"]
+
+EXPOSE 8787
+
+USER node
+
+CMD ["node", "server/sqlite-sync-server.mjs"]
