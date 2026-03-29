@@ -281,6 +281,27 @@ function getHpProgressClass(combatant: Pick<Combatant, "currentHP" | "totalHP">)
     }[getHpStatus(combatant)]
 }
 
+function getVisibleCombatantAtOrAfter<T extends Pick<Combatant, "visibility">>(
+    combatants: T[],
+    startIndex: number
+): T | null {
+    if (!combatants.length) {
+        return null
+    }
+
+    const normalizedStart = ((startIndex % combatants.length) + combatants.length) % combatants.length
+
+    for (let offset = 0; offset < combatants.length; offset++) {
+        const combatant = combatants[(normalizedStart + offset) % combatants.length]
+
+        if (combatant.visibility !== Visibility.None) {
+            return combatant
+        }
+    }
+
+    return null
+}
+
 function colorIsDark(bgColor: string): boolean {
     let color = (bgColor.charAt(0) === '#') ? bgColor.substring(1, 7) : bgColor;
     let r = parseInt(color.substring(0, 2), 16); // hexToR
@@ -289,5 +310,5 @@ function colorIsDark(bgColor: string): boolean {
     return ((r * 0.299) + (g * 0.587) + (b * 0.114)) <= 100;
 }
 
-export {colorIsDark, combatantColorKeys, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+export {colorIsDark, combatantColorKeys, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
 export type { CombatantColorKey }

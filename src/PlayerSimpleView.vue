@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { colorIsDark, Combatant, getHpTextClass, Visibility } from "./functions.ts";
+import { colorIsDark, Combatant, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility } from "./functions.ts";
 import { useTranslations } from "./lang.ts";
 
 const { t } = useTranslations();
@@ -12,18 +12,15 @@ const props = defineProps<{
 }>();
 
 const currentCombatant = computed(() => {
-  if (!props.combatants.length) return null;
-  return props.combatants[props.turn] ?? null;
+  return getVisibleCombatantAtOrAfter(props.combatants, props.turn);
 });
 
 const nextCombatant = computed(() => {
-  if (!props.combatants.length) return null;
-  const nextIndex = (props.turn + 1) % props.combatants.length;
-  return props.combatants[nextIndex] ?? null;
+  return getVisibleCombatantAtOrAfter(props.combatants, props.turn + 1);
 });
 
 function getVisibleHpTextClass(combatant: Combatant | null): string {
-  if (!combatant || combatant.visibility !== Visibility.Full) {
+  if (!combatant || combatant.visibility === Visibility.None) {
     return "text-base-content";
   }
 
