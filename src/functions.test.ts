@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Combatant, Condition, Visibility, colorIsDark, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass } from './functions'
+import { Combatant, Condition, Visibility, colorIsDark, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter } from './functions'
 
 describe('Condition', () => {
   it('should create a condition with default value of 1', () => {
@@ -194,6 +194,29 @@ describe('HP status helpers', () => {
     expect(getHpTextClass(woundedCombatant)).toBe('text-warning')
     expect(getHpTextClass(null)).toBe('text-base-content')
     expect(getHpProgressClass(criticalCombatant)).toBe('progress-error')
+  })
+})
+
+describe('player visibility helpers', () => {
+  it('should skip hidden combatants when finding the current visible combatant', () => {
+    const hidden = new Combatant('Hidden', 20, 15, 20, [], Visibility.None)
+    const visible = new Combatant('Visible', 20, 14, 10, [], Visibility.Half)
+
+    expect(getVisibleCombatantAtOrAfter([hidden, visible], 0)).toBe(visible)
+  })
+
+  it('should wrap around when searching for the next visible combatant', () => {
+    const visible = new Combatant('Visible', 20, 14, 10, [], Visibility.Half)
+    const hidden = new Combatant('Hidden', 20, 13, 20, [], Visibility.None)
+
+    expect(getVisibleCombatantAtOrAfter([visible, hidden], 1)).toBe(visible)
+  })
+
+  it('should return null when every combatant is hidden', () => {
+    const hiddenOne = new Combatant('Hidden One', 20, 15, 20, [], Visibility.None)
+    const hiddenTwo = new Combatant('Hidden Two', 20, 14, 20, [], Visibility.None)
+
+    expect(getVisibleCombatantAtOrAfter([hiddenOne, hiddenTwo], 0)).toBeNull()
   })
 })
 
