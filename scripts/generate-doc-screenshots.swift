@@ -143,8 +143,8 @@ final class ScreenshotCoordinator {
     private let baseURL = URL(string: "http://127.0.0.1:4173/init-tracker/")!
     private let docsDirectory: URL
     private let dataStore = WKWebsiteDataStore.default()
-    private let splitSize = CGSize(width: 864, height: 980)
-    private let onDeckSize = CGSize(width: 1368, height: 960)
+    private let splitSize = CGSize(width: 1600, height: 900)
+    private let onDeckSize = CGSize(width: 1600, height: 900)
     private let finish: (Result<Void, Error>) -> Void
 
     init(docsDirectory: URL, finish: @escaping (Result<Void, Error>) -> Void) {
