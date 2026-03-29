@@ -32,6 +32,7 @@
     "postinstall": "node scripts/install-native-linux-deps.mjs",
     "preview": "vite preview",
     "sqlite:server": "node server/sqlite-sync-server.mjs",
+    "docs:screenshots": "swift scripts/generate-doc-screenshots.swift",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",

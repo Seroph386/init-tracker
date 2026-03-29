@@ -9,35 +9,14 @@ A modern, themeable initiative tracker for Pathfinder 2e combat encounters with 
 
 **[🎮 Live Demo](https://valforte.github.io/Initiative-Tracker/)**
 
-<!-- TODO: Add screenshot or animated GIF here
-Suggested content to showcase:
-- Split screen showing DM view on left with full controls (HP management, visibility toggles, condition tracking)
-- Player view on right showing the clean, read-only interface
-- Highlight a few key features:
-  * Different visibility states (show a hidden combatant in DM view that's not visible in player view)
-  * HP bars and conditions
-  * Current turn highlighted
-  * Theme selector dropdown
-- Alternative: Animated GIF showing:
-  1. Adding a combatant
-  2. Dealing damage (showing temp HP absorption)
-  3. Adding a condition
-  4. Advancing to next turn
-  5. Switching to player view
-Recommended tools:
-- Screenshot: Built-in OS screenshot tool
-- GIF: LICEcap (free), Kap (macOS), or ScreenToGif (Windows)
-- Optimal size: 1200px wide for best README display
-Example markdown once you have the image:
-![Initiative Tracker Demo](docs/demo.gif)
-or
-![DM and Player Views](docs/screenshot.png)
--->
-## DM View:
-<img width="1833" height="1521" alt="image" src="https://github.com/user-attachments/assets/dcd346cb-8ef0-4b48-b8af-5c8bef17e617" />
+## DM View
+![DM View](docs/dm-view.png)
 
-## Player View:
-<img width="1833" height="1066" alt="image" src="https://github.com/user-attachments/assets/249fbe70-b183-4603-b277-71fffe725087" />
+## Player View
+![Player View](docs/player-view.png)
+
+## On-Deck View
+![On-Deck View](docs/on-deck-view.png)
 
 
 ## Features
@@ -59,7 +38,7 @@ or
 - Add/remove combatants with customizable visibility
 - Modify HP with configurable increment values
 - Manage temporary HP separately from regular HP
-- Bulk spawn multiple creatures with auto-colored names
+- Bulk spawn multiple creatures with optional color and number naming
 - Add and track conditions with values (e.g., "Frightened 2")
 - Integrated monster list from Pathfinder 2e Monster Core and Age of Ashes
 - Quick reference help tooltips for all major features
@@ -122,6 +101,7 @@ When you open the app normally, you'll see the DM interface with full controls:
 
 1. **Add Combatants**: Click the "Add" button to create new combatants
    - Enter name, HP, and initiative
+   - Optionally choose a color suffix or use `None` for plain numbering
    - Set visibility level (eye icons)
    - Use quantity field to spawn multiple creatures at once
    - Autocomplete suggestions from Monster Core database
@@ -170,6 +150,8 @@ Use On-Deck mode when you want a cleaner presentation screen that only emphasize
 ```
 http://localhost:5173/?view=on-deck
 ```
+
+![On-Deck View](docs/on-deck-view.png)
 
 You can open it in one of two ways:
 - Click the **On-Deck View** button from the DM interface when playing locally

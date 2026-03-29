@@ -20,6 +20,7 @@ type TranslationStructure = {
         onDeckView: string,
         add: string,
         clear: string,
+        color: string,
         quantity: string,
         onlineMode: string,
         copyPlayerUrl: string,
@@ -50,6 +51,7 @@ type TranslationStructure = {
         resetConfirmNo: string,
     },
     colors: {
+        none: string,
         red: string,
         green: string,
         blue: string,
@@ -82,6 +84,7 @@ const translations: Record<Locale, TranslationStructure> = {
             onDeckView: "On-Deck View",
             add: "Add",
             clear: "Clear",
+            color: "Color",
             quantity: "Qty",
             onlineMode: "Online Mode",
             copyPlayerUrl: "Copy Player URL",
@@ -112,6 +115,7 @@ const translations: Record<Locale, TranslationStructure> = {
             resetConfirmNo: "Cancel",
         },
         colors: {
+            none: "None",
             red: "Red",
             green: "Green",
             blue: "Blue",
@@ -173,6 +177,7 @@ const translations: Record<Locale, TranslationStructure> = {
             onDeckView: "Visualização On-Deck",
             add: "Adicionar",
             clear: "Limpar",
+            color: "Cor",
             quantity: "Qtd",
             onlineMode: "Modo Online",
             copyPlayerUrl: "Copiar URL dos Jogadores",
@@ -203,6 +208,7 @@ const translations: Record<Locale, TranslationStructure> = {
             resetConfirmNo: "Cancelar",
         },
         colors: {
+            none: "Nenhuma",
             red: "Vermelho",
             green: "Verde",
             blue: "Azul",
