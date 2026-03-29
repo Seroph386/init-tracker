@@ -49,7 +49,7 @@ git push origin prod
 **GitHub Actions will automatically**:
 - 🏗️ Build the site
 - 🚀 Deploy to GitHub Pages
-- 🌐 Live in ~2 minutes at: https://valforte.github.io/Initiative-Tracker/
+- 🌐 Live in ~2 minutes at: https://seroph386.github.io/init-tracker/
 
 ## Available Commands
 

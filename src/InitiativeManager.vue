@@ -5,16 +5,34 @@ import {useStorage} from "@vueuse/core";
 import DMView from "./DMView.vue";
 import PlayerView from "./PlayerView.vue";
 import PlayerSimpleView from "./PlayerSimpleView.vue";
-import {useFirebaseSync, isFirebaseReady, generateSessionId, waitForFirebase} from "./firebase.ts";
 import type {GameSystem} from "./db.ts";
+import {generateSessionId} from "./firebase.ts";
+import {
+  getConfiguredOnlineProviders,
+  getDefaultOnlineProvider,
+  isFirebaseReady,
+  isOnlineProviderConfigured,
+  normalizeOnlineProvider,
+  type OnlineProvider,
+  useFirebaseSessionSync,
+  useSqliteSessionSync,
+  waitForOnlineProvider
+} from "./online.ts";
 
 // Check URL for session ID and view mode
 const urlParams = new URLSearchParams(window.location.search)
 const sessionId = ref<string>(urlParams.get("session") || '')
+const requestedOnlineProvider = ref<OnlineProvider | ''>(normalizeOnlineProvider(urlParams.get('backend')))
+const availableOnlineProviders = getConfiguredOnlineProviders()
 
 // Security: Check if this is a DM session
 // DM sessions are tracked in localStorage with a security token
 const dmSessions = useStorage<string[]>('dmSessions', [])
+const preferredOnlineProvider = useStorage<OnlineProvider | ''>('onlineProvider', getDefaultOnlineProvider())
+
+if (preferredOnlineProvider.value && !isOnlineProviderConfigured(preferredOnlineProvider.value)) {
+  preferredOnlineProvider.value = getDefaultOnlineProvider()
+}
 
 // Security: Determine view mode
 // - If session exists and NOT in dmSessions, force player view (read-only)
@@ -26,11 +44,25 @@ const isSharedPlayerLink = computed(() => {
 })
 
 const viewMode = urlParams.get('view') || ''
+const docsDemo = urlParams.get('docs-demo') === 'readme'
 const isPlayerViewParam = viewMode === 'player' || viewMode === 'on-deck' || viewMode === 'player-simple'
 const isDMView = ref<boolean>(!isSharedPlayerLink.value && !isPlayerViewParam)
 
-// Online mode is active when there's a session ID in the URL
-const isOnlineMode = computed(() => !!sessionId.value)
+// Online mode is active when there's a session ID in the URL and a provider is configured
+const onlineProvider = computed<OnlineProvider | ''>(() => {
+  if (requestedOnlineProvider.value && isOnlineProviderConfigured(requestedOnlineProvider.value)) {
+    return requestedOnlineProvider.value
+  }
+
+  if (preferredOnlineProvider.value && isOnlineProviderConfigured(preferredOnlineProvider.value)) {
+    return preferredOnlineProvider.value
+  }
+
+  return getDefaultOnlineProvider()
+})
+
+const isOnlineMode = computed(() => !!sessionId.value && !!onlineProvider.value)
+const isOnlineAvailable = computed(() => availableOnlineProviders.length > 0)
 
 // Security: If player tries to remove view=player from URL, redirect back
 watch([sessionId, () => window.location.search], () => {
@@ -76,7 +108,7 @@ const combatantSerializer = {
 }
 
 /**
- * State management that switches between localStorage (offline) and Firebase (online)
+ * State management that switches between localStorage (offline) and realtime providers (online)
  */
 let _turn: any = null
 let _round: any = null
@@ -98,129 +130,170 @@ const combatants = computed({
   set: (v) => { if (_combatants) _combatants.value = v }
 })
 
-// Initialize state - this will be set in onMounted after Firebase is ready
+const docsDemoCombatants = [
+  new Combatant('Bog Witch', 48, 22, 32, [new Condition('Frightened', 1)], Visibility.Full, 0, 0),
+  new Combatant('Pumpkin Scout (1)', 18, 19, 18, [], Visibility.Half, 0, 0),
+  new Combatant('Pumpkin Scout (2)', 18, 18, 6, [new Condition('Clumsy', 1)], Visibility.None, 0, 0),
+  new Combatant('Vine Horror (Green)', 30, 16, 12, [new Condition('Grabbed', 1)], Visibility.Full, 4, 4)
+]
+
+function initializeOfflineState() {
+  if (docsDemo) {
+    _turn = ref(0)
+    _round = ref(3)
+    _combatants = ref(docsDemoCombatants)
+    isInitialized.value = true
+    return
+  }
+
+  if (isSharedPlayerLink.value) {
+    _turn = ref(0)
+    _round = ref(1)
+    _combatants = ref(getDefaultCombatants(gameSystem.value))
+    isInitialized.value = true
+    return
+  }
+
+  _turn = useStorage('turn', 0)
+  _round = useStorage('round', 1)
+  _combatants = useStorage(
+    'combatants',
+    getDefaultCombatants(gameSystem.value),
+    undefined,
+    {
+      serializer: {
+        read: (v: any) => {
+          if (v) {
+            let parsedItems = JSON.parse(v)
+            return parsedItems.map((combatant: Combatant) => {
+              return new Combatant(
+                combatant.name,
+                combatant.totalHP,
+                combatant.initiative,
+                combatant.currentHP,
+                combatant.conditions.map((condition: Condition) => {
+                  return new Condition(condition.name, condition.value)
+                }),
+                combatant.visibility,
+                combatant.tempHP || 0,
+                combatant.maxTempHP || 0
+              )
+            })
+          }
+          return getDefaultCombatants(gameSystem.value)
+        },
+        write: (v: any) => JSON.stringify(v)
+      }
+    }
+  )
+
+  isInitialized.value = true
+}
+
+// Initialize state - this will be set in onMounted after the online provider is ready
 function initializeState() {
-  const shouldUseFirebase = isOnlineMode.value && sessionId.value && isFirebaseReady()
+  const shouldUseOnlineProvider = isOnlineMode.value && sessionId.value
 
-  if (shouldUseFirebase) {
-    // For DM: Load existing localStorage data to use as defaults
-    let defaultTurn = 0
-    let defaultRound = 1
-    let defaultCombatantsData = getDefaultCombatants(gameSystem.value)
+  if (!shouldUseOnlineProvider) {
+    initializeOfflineState()
+    return
+  }
 
-    if (isDMView.value && !isSharedPlayerLink.value) {
-      // Try to load existing localStorage data
-      try {
-        const storedTurn = localStorage.getItem('turn')
-        const storedRound = localStorage.getItem('round')
-        const storedCombatants = localStorage.getItem('combatants')
+  // For DM: Load existing localStorage data to use as defaults
+  let defaultTurn = 0
+  let defaultRound = 1
+  let defaultCombatantsData = getDefaultCombatants(gameSystem.value)
 
-        if (storedTurn) defaultTurn = JSON.parse(storedTurn)
-        if (storedRound) defaultRound = JSON.parse(storedRound)
-        if (storedCombatants) {
-          const parsedCombatants = JSON.parse(storedCombatants)
-          defaultCombatantsData = parsedCombatants.map((combatant: any) => {
-            return new Combatant(
-              combatant.name,
-              combatant.totalHP,
-              combatant.initiative,
-              combatant.currentHP,
-              (combatant.conditions || []).map((condition: any) => {
-                return new Condition(condition.name, condition.value)
-              }),
-              combatant.visibility,
-              combatant.tempHP || 0,
-              combatant.maxTempHP || 0
-            )
-          })
-        }
-      } catch (e) {
-        // If loading fails, use defaults
-        console.error('Error loading localStorage data:', e)
+  if (isDMView.value && !isSharedPlayerLink.value) {
+    // Try to load existing localStorage data
+    try {
+      const storedTurn = localStorage.getItem('turn')
+      const storedRound = localStorage.getItem('round')
+      const storedCombatants = localStorage.getItem('combatants')
+
+      if (storedTurn) defaultTurn = JSON.parse(storedTurn)
+      if (storedRound) defaultRound = JSON.parse(storedRound)
+      if (storedCombatants) {
+        const parsedCombatants = JSON.parse(storedCombatants)
+        defaultCombatantsData = parsedCombatants.map((combatant: any) => {
+          return new Combatant(
+            combatant.name,
+            combatant.totalHP,
+            combatant.initiative,
+            combatant.currentHP,
+            (combatant.conditions || []).map((condition: any) => {
+              return new Condition(condition.name, condition.value)
+            }),
+            combatant.visibility,
+            combatant.tempHP || 0,
+            combatant.maxTempHP || 0
+          )
+        })
       }
+    } catch (e) {
+      // If loading fails, use defaults
+      console.error('Error loading localStorage data:', e)
     }
+  }
 
-    // Online mode with Firebase - use localStorage data as defaults
-    // Track when all Firebase data is loaded
-    let loadedCount = 0
-    const totalToLoad = 3
-    const markAsLoadedIfReady = () => {
-      loadedCount++
-      if (loadedCount === totalToLoad) {
-        isInitialized.value = true
-      }
-    }
+  const defaultSessionState = {
+    turn: defaultTurn,
+    round: defaultRound,
+    combatants: defaultCombatantsData
+  }
 
-    _turn = useFirebaseSync(`sessions/${sessionId.value}/turn`, defaultTurn, undefined, markAsLoadedIfReady)
-    _round = useFirebaseSync(`sessions/${sessionId.value}/round`, defaultRound, undefined, markAsLoadedIfReady)
-    _combatants = useFirebaseSync(
-      `sessions/${sessionId.value}/combatants`,
-      defaultCombatantsData,
+  const markAsLoadedIfReady = () => {
+    isInitialized.value = true
+  }
+
+  if (onlineProvider.value === 'firebase' && isFirebaseReady()) {
+    const syncedSession = useFirebaseSessionSync(
+      sessionId.value,
+      defaultSessionState,
       combatantSerializer,
       markAsLoadedIfReady
     )
-
-    // For DM: Also sync to localStorage as backup (but not for players)
-    if (isDMView.value && !isSharedPlayerLink.value) {
-      watch(_turn, (newValue) => {
-        localStorage.setItem('turn', JSON.stringify(newValue))
-      })
-      watch(_round, (newValue) => {
-        localStorage.setItem('round', JSON.stringify(newValue))
-      })
-      watch(_combatants, (newValue) => {
-        localStorage.setItem('combatants', JSON.stringify(newValue))
-      }, { deep: true })
-    }
-  } else {
-    // Offline mode with localStorage (DM only)
-    _turn = useStorage('turn', 0)
-    _round = useStorage('round', 1)
-    _combatants = useStorage(
-      'combatants',
-      getDefaultCombatants(gameSystem.value),
-      undefined,
-      {
-        serializer: {
-          read: (v: any) => {
-            if (v) {
-              let parsedItems = JSON.parse(v)
-              return parsedItems.map((combatant: Combatant) => {
-                return new Combatant(
-                  combatant.name,
-                  combatant.totalHP,
-                  combatant.initiative,
-                  combatant.currentHP,
-                  combatant.conditions.map((condition: Condition) => {
-                    return new Condition(condition.name, condition.value)
-                  }),
-                  combatant.visibility,
-                  combatant.tempHP || 0,
-                  combatant.maxTempHP || 0
-                )
-              })
-            }
-            return getDefaultCombatants(gameSystem.value)
-          },
-          write: (v: any) => JSON.stringify(v)
-        }
-      }
+    _turn = syncedSession.turn
+    _round = syncedSession.round
+    _combatants = syncedSession.combatants
+  } else if (onlineProvider.value === 'sqlite') {
+    const syncedSession = useSqliteSessionSync(
+      sessionId.value,
+      defaultSessionState,
+      combatantSerializer,
+      markAsLoadedIfReady
     )
+    _turn = syncedSession.turn
+    _round = syncedSession.round
+    _combatants = syncedSession.combatants
+  } else {
+    console.error('No online provider available for session; falling back to offline state')
+    initializeOfflineState()
+    return
+  }
 
-    // Offline mode is synchronous, mark as initialized immediately
-    isInitialized.value = true
+  // For DM: Also sync to localStorage as backup (but not for players)
+  if (isDMView.value && !isSharedPlayerLink.value) {
+    watch(_turn, (newValue) => {
+      localStorage.setItem('turn', JSON.stringify(newValue))
+    })
+    watch(_round, (newValue) => {
+      localStorage.setItem('round', JSON.stringify(newValue))
+    })
+    watch(_combatants, (newValue) => {
+      localStorage.setItem('combatants', JSON.stringify(newValue))
+    }, { deep: true })
   }
 
   // Note: For online mode, isInitialized is set in markAsLoadedIfReady callback
 }
 
-// Wait for Firebase to initialize, then set up state
+// Wait for the selected online provider to initialize, then set up state
 onMounted(async () => {
-  // If online mode, wait for Firebase to be ready
-  if (isOnlineMode.value && sessionId.value) {
-    const firebaseReady = await waitForFirebase(5000)
-    if (!firebaseReady) {
-      console.error('Firebase failed to initialize within timeout')
+  if (isOnlineMode.value && sessionId.value && onlineProvider.value) {
+    const providerReady = await waitForOnlineProvider(onlineProvider.value, 5000)
+    if (!providerReady) {
+      console.error(`${onlineProvider.value} failed to initialize within timeout; falling back to offline state`)
     }
   }
 
@@ -229,10 +302,11 @@ onMounted(async () => {
 
 // Function to enable online mode (called from DM view toggle)
 function enableOnlineMode() {
-  if (!sessionId.value && isDMView.value) {
+  if (!sessionId.value && isDMView.value && onlineProvider.value) {
     // Generate new session ID when enabling online mode
     const newSessionId = generateSessionId()
     sessionId.value = newSessionId
+    requestedOnlineProvider.value = onlineProvider.value
 
     // Register this as a DM session for security
     if (!dmSessions.value.includes(newSessionId)) {
@@ -241,6 +315,7 @@ function enableOnlineMode() {
 
     const url = new URL(window.location.href)
     url.searchParams.set('session', newSessionId)
+    url.searchParams.set('backend', onlineProvider.value)
     // Remove view parameter if it exists (DM shouldn't have it)
     url.searchParams.delete('view')
     window.history.pushState({}, '', url.toString())
@@ -256,8 +331,10 @@ function disableOnlineMode() {
     // Remove session from URL when disabling online mode
     const url = new URL(window.location.href)
     url.searchParams.delete('session')
+    url.searchParams.delete('backend')
     window.history.pushState({}, '', url.toString())
     sessionId.value = ''
+    requestedOnlineProvider.value = ''
 
     // Reload to reinitialize with localStorage
     window.location.reload()
@@ -271,6 +348,10 @@ function toggleOnlineMode(value: boolean) {
   } else {
     disableOnlineMode()
   }
+}
+
+function setOnlineProvider(provider: OnlineProvider) {
+  preferredOnlineProvider.value = provider
 }
 
 /**
@@ -358,12 +439,16 @@ function resetToDefaults(): void {
       :combatants="orderedCombatants"
       :isOnlineMode="isOnlineMode"
       :sessionId="sessionId"
+      :onlineProvider="onlineProvider"
+      :availableOnlineProviders="availableOnlineProviders"
+      :isOnlineAvailable="isOnlineAvailable"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
       @newCombatant="addCombatant"
       @removeCombatant="removeCombatant"
       @toggleOnlineMode="toggleOnlineMode"
+      @setOnlineProvider="setOnlineProvider"
   />
 
   <PlayerSimpleView

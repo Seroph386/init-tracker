@@ -1,9 +1,9 @@
 <script setup lang="ts">
 
-import {ref} from "vue";
+import {onMounted, ref} from "vue";
 import DMTable from "./DMTable.vue";
 import Settings from "./Settings.vue";
-import {Combatant, Visibility} from "./functions.ts";
+import {combatantColorKeys, Combatant, formatCombatantName, type CombatantColorKey, Visibility} from "./functions.ts";
 import {Icon} from "@iconify/vue";
 import {useTranslations} from "./lang.ts";
 import {
@@ -19,6 +19,7 @@ import {
 import {getEnabledMonsters, getDefaultEnabledSources, type Monster, type GameSystem} from "./db.ts";
 import {useStorage} from "@vueuse/core";
 import {computed, watch} from "vue";
+import type {OnlineProvider} from "./online.ts";
 
 const { t } = useTranslations()
 
@@ -29,6 +30,7 @@ const emit = defineEmits<{
   (e: 'newCombatant', name: string, HP: number, initiative: number, visibility: Visibility): void
   (e: 'removeCombatant', index: number): void
   (e: 'toggleOnlineMode', value: boolean): void
+  (e: 'setOnlineProvider', value: OnlineProvider): void
 }>()
 
 const props = defineProps<{
@@ -37,19 +39,44 @@ const props = defineProps<{
   combatants: Combatant[],
   isOnlineMode: boolean,
   sessionId: string,
+  onlineProvider: OnlineProvider | '',
+  availableOnlineProviders: OnlineProvider[],
+  isOnlineAvailable: boolean,
 }>()
 
 const copiedButton = ref<'player' | 'on-deck' | null>(null)
 let copiedMessageTimeout: ReturnType<typeof setTimeout> | null = null
 const showResetConfirm = ref(false)
 const isSettingsOpen = ref(false)
+const docsDemo = new URLSearchParams(window.location.search).get('docs-demo') === 'readme'
 
 const newName = ref('')
 const newHP = ref(1)
 const newInitiative = ref(1)
 const newVisibility = ref(Visibility.None)
+const newColor = ref<CombatantColorKey>('none')
 const newQuantity = ref(1)
 const isNewCombatantPopoverOpen = ref(false)
+const colorOptions = computed(() =>
+  combatantColorKeys.map((colorKey) => ({
+    value: colorKey,
+    label: t.value.colors[colorKey]
+  }))
+)
+
+onMounted(() => {
+  if (!docsDemo) {
+    return
+  }
+
+  newName.value = 'Ash Skeleton'
+  newHP.value = 16
+  newInitiative.value = 14
+  newVisibility.value = Visibility.None
+  newColor.value = 'none'
+  newQuantity.value = 3
+  isNewCombatantPopoverOpen.value = true
+})
 
 // Get enabled content sources and generate monster list
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
@@ -74,37 +101,24 @@ function clearNewCombatant(): void {
   newHP.value = 1
   newInitiative.value = 1
   newVisibility.value = Visibility.None
+  newColor.value = 'none'
   newQuantity.value = 1
   document.getElementById('newName')?.focus()
 }
 
 /**
- * Generates a unique name for multiple combatants spawned at once
- * Uses Pathfinder pawn colors (Red, Green, Blue, Purple, Pink, Brown) for the first 6,
- * then falls back to numbers for additional spawns
+ * Generates a unique name using the selected color and count suffix
  * @param i - Index of the combatant being spawned (0-based)
- * @returns The combatant name with color/number suffix, or plain name if quantity is 1
+ * @returns The combatant name with color and count suffix
  */
 function getCombatantName(i: number): string {
-  if (i == 0 && newQuantity.value == 1) {
-    return newName.value
-  }
-  switch (i) {
-    case 0:
-      return `${newName.value} (${t.value.colors.red})`
-    case 1:
-      return `${newName.value} (${t.value.colors.green})`
-    case 2:
-      return `${newName.value} (${t.value.colors.blue})`
-    case 3:
-      return `${newName.value} (${t.value.colors.purple})`
-    case 4:
-      return `${newName.value} (${t.value.colors.pink})`
-    case 5:
-      return `${newName.value} (${t.value.colors.brown})`
-    default:
-      return `${newName.value} (${i})`
-  }
+  const selectedColorLabel = newColor.value === 'none'
+    ? undefined
+    : t.value.colors[newColor.value]
+
+  return newQuantity.value === 1
+    ? formatCombatantName(newName.value, selectedColorLabel)
+    : formatCombatantName(newName.value, selectedColorLabel, i + 1)
 }
 
 function addCombatant(): void {
@@ -145,6 +159,9 @@ async function copyPlayerUrl(): Promise<void> {
   const url = new URL(window.location.href)
   url.searchParams.set('session', props.sessionId)
   url.searchParams.set('view', 'player')
+  if (props.onlineProvider) {
+    url.searchParams.set('backend', props.onlineProvider)
+  }
 
   try {
     await navigator.clipboard.writeText(url.toString())
@@ -168,6 +185,9 @@ async function copyOnDeckUrl(): Promise<void> {
   const url = new URL(window.location.href)
   url.searchParams.set('session', props.sessionId)
   url.searchParams.set('view', 'on-deck')
+  if (props.onlineProvider) {
+    url.searchParams.set('backend', props.onlineProvider)
+  }
 
   try {
     await navigator.clipboard.writeText(url.toString())
@@ -263,19 +283,25 @@ async function copyOnDeckUrl(): Promise<void> {
                   </NumberFieldRoot>
                 </div>
                 <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newInitiative">{{t.dm_actions.quantity}}</Label>
+                  <Label for="newColor">{{t.dm_actions.color}}</Label>
+                  <select id="newColor" tabindex="4" v-model="newColor" class="select select-bordered col-span-2 h-8 min-h-8">
+                    <option v-for="option in colorOptions" :key="option.value" :value="option.value">{{option.label}}</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-3 items-center gap-4">
+                  <Label for="newQuantity">{{t.dm_actions.quantity}}</Label>
                   <NumberFieldRoot :min="1" v-model="newQuantity" class="col-span-2">
-                    <NumberFieldInput tabindex="3" id="newQuantity" class="input h-8" />
+                    <NumberFieldInput tabindex="5" id="newQuantity" class="input h-8" />
                   </NumberFieldRoot>
                 </div>
                 <div class="flex justify-end gap-2">
-                  <button @click="changeNewVisibility" tabindex="4" class="btn btn-neutral btn-sm">
+                  <button @click="changeNewVisibility" tabindex="6" class="btn btn-neutral btn-sm">
                     <Icon v-if="newVisibility === Visibility.Full" icon="tabler:eye" height="24" />
                     <Icon v-else-if="newVisibility === Visibility.Half" icon="tabler:eye-off" height="24" />
                     <Icon v-else-if="newVisibility === Visibility.None" icon="tabler:eye-closed" height="24" />
                   </button>
-                  <button @click="clearNewCombatant" tabindex="5" class="btn btn-error btn-sm"><Icon icon="tabler:eraser" height="24" />{{t.dm_actions.clear}}</button>
-                  <button @click="addCombatant" tabindex="6" class="btn btn-neutral btn-sm"><Icon icon="tabler:plus" height="24" />{{t.dm_actions.add}}</button>
+                  <button @click="clearNewCombatant" tabindex="7" class="btn btn-error btn-sm"><Icon icon="tabler:eraser" height="24" />{{t.dm_actions.clear}}</button>
+                  <button @click="addCombatant" tabindex="8" class="btn btn-neutral btn-sm"><Icon icon="tabler:plus" height="24" />{{t.dm_actions.add}}</button>
                 </div>
               </div>
               <PopoverArrow class="fill-base-300" />
@@ -318,7 +344,11 @@ async function copyOnDeckUrl(): Promise<void> {
     :sessionId="sessionId"
     :isDMView="true"
     :isOpen="isSettingsOpen"
+    :onlineProvider="onlineProvider"
+    :availableOnlineProviders="availableOnlineProviders"
+    :isOnlineAvailable="isOnlineAvailable"
     @toggleOnlineMode="(value) => $emit('toggleOnlineMode', value)"
+    @setOnlineProvider="(value) => $emit('setOnlineProvider', value)"
     @requestReset="requestReset"
     @close="isSettingsOpen = false"
   />

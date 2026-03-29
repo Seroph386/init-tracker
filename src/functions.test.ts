@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Combatant, Condition, Visibility, colorIsDark, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass } from './functions'
+import { Combatant, Condition, Visibility, colorIsDark, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass } from './functions'
 
 describe('Condition', () => {
   it('should create a condition with default value of 1', () => {
@@ -153,6 +153,24 @@ describe('Combatant - Conditions', () => {
     combatant.changeConditionValue()
     expect(combatant.conditions[0].value).toBe(1)
     expect(combatant.conditions[1].value).toBe(2)
+  })
+})
+
+describe('combatant naming', () => {
+  it('should keep the base name when no color or count is provided', () => {
+    expect(formatCombatantName('Goblin')).toBe('Goblin')
+  })
+
+  it('should include only the count when no color is selected for grouped combatants', () => {
+    expect(formatCombatantName('Goblin', undefined, 3)).toBe('Goblin (3)')
+  })
+
+  it('should include only the selected color for a single combatant', () => {
+    expect(formatCombatantName('Goblin', 'Green')).toBe('Goblin (Green)')
+  })
+
+  it('should include the selected color and count for grouped combatants', () => {
+    expect(formatCombatantName('Goblin', 'Green', 3)).toBe('Goblin (Green 3)')
   })
 })
 

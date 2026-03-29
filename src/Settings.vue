@@ -4,6 +4,7 @@ import {useTranslations} from "./lang.ts";
 import {useStorage} from "@vueuse/core";
 import {getContentSourcesBySystem, getDefaultEnabledSources, type GameSystem} from "./db.ts";
 import {Icon} from "@iconify/vue";
+import type {OnlineProvider} from "./online.ts";
 
 const { t } = useTranslations()
 
@@ -12,10 +13,14 @@ defineProps<{
   sessionId: string
   isDMView: boolean
   isOpen: boolean
+  onlineProvider: OnlineProvider | ''
+  availableOnlineProviders: OnlineProvider[]
+  isOnlineAvailable: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'toggleOnlineMode', value: boolean): void
+  (e: 'setOnlineProvider', value: OnlineProvider): void
   (e: 'requestReset'): void
   (e: 'close'): void
 }>()
@@ -83,11 +88,32 @@ function requestReset() {
                 type="checkbox"
                 class="toggle"
                 :checked="isOnlineMode"
+                :disabled="!isOnlineAvailable"
                 @change="(e) => $emit('toggleOnlineMode', (e.target as HTMLInputElement).checked)"
             />
             <span class="label-text">{{t.dm_actions.onlineMode}}</span>
           </label>
         </div>
+
+        <div v-if="isDMView && availableOnlineProviders.length" class="flex flex-col gap-2">
+          <div class="text-sm font-semibold">{{t.options.onlineProvider}}</div>
+          <div class="flex items-center gap-2">
+            <button
+              v-for="provider in availableOnlineProviders"
+              :key="provider"
+              class="btn btn-sm flex-1"
+              :class="{'btn-primary': onlineProvider === provider, 'btn-ghost': onlineProvider !== provider}"
+              :disabled="isOnlineMode"
+              @click="$emit('setOnlineProvider', provider)"
+            >
+              {{provider === 'firebase' ? t.options.firebase : t.options.sqlite}}
+            </button>
+          </div>
+        </div>
+
+        <p v-if="isDMView && !isOnlineAvailable" class="text-sm opacity-70">
+          {{t.options.onlineUnavailable}}
+        </p>
 
         <!-- Use Temporary HP Toggle -->
         <div class="flex items-center justify-between">

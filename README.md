@@ -1,43 +1,24 @@
 # 🎲 Pathfinder 2e Initiative Tracker
 
-![CI](https://github.com/Valforte/initiative-tracker/workflows/CI/badge.svg)
-![License](https://img.shields.io/github/license/Valforte/initiative-tracker)
-![Version](https://img.shields.io/github/package-json/v/Valforte/initiative-tracker)
-![Stars](https://img.shields.io/github/stars/Valforte/initiative-tracker?style=social)
+![CI](https://github.com/Seroph386/init-tracker/workflows/CI/badge.svg)
+![License](https://img.shields.io/github/license/Seroph386/init-tracker)
+![Version](https://img.shields.io/github/package-json/v/Seroph386/init-tracker)
+![Stars](https://img.shields.io/github/stars/Seroph386/init-tracker?style=social)
 
 A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views. Built with Vue 3, TypeScript, and Tailwind CSS. 
 
-**[🎮 Live Demo](https://valforte.github.io/Initiative-Tracker/)**
+**[🎮 Live Demo](https://seroph386.github.io/init-tracker/)**
 
-<!-- TODO: Add screenshot or animated GIF here
-Suggested content to showcase:
-- Split screen showing DM view on left with full controls (HP management, visibility toggles, condition tracking)
-- Player view on right showing the clean, read-only interface
-- Highlight a few key features:
-  * Different visibility states (show a hidden combatant in DM view that's not visible in player view)
-  * HP bars and conditions
-  * Current turn highlighted
-  * Theme selector dropdown
-- Alternative: Animated GIF showing:
-  1. Adding a combatant
-  2. Dealing damage (showing temp HP absorption)
-  3. Adding a condition
-  4. Advancing to next turn
-  5. Switching to player view
-Recommended tools:
-- Screenshot: Built-in OS screenshot tool
-- GIF: LICEcap (free), Kap (macOS), or ScreenToGif (Windows)
-- Optimal size: 1200px wide for best README display
-Example markdown once you have the image:
-![Initiative Tracker Demo](docs/demo.gif)
-or
-![DM and Player Views](docs/screenshot.png)
--->
-## DM View:
-<img width="1833" height="1521" alt="image" src="https://github.com/user-attachments/assets/dcd346cb-8ef0-4b48-b8af-5c8bef17e617" />
+Maintained by Seroph386 as a divergent rework of [Gabriel Valforte's initiative-tracker](https://github.com/Valforte/initiative-tracker). Credit to the original project for the foundation and inspiration, but treat this repository as its own actively maintained solution.
 
-## Player View:
-<img width="1833" height="1066" alt="image" src="https://github.com/user-attachments/assets/249fbe70-b183-4603-b277-71fffe725087" />
+## DM View
+![DM View](docs/dm-view.png)
+
+## Player View
+![Player View](docs/player-view.png)
+
+## On-Deck View
+![On-Deck View](docs/on-deck-view.png)
 
 
 ## Features
@@ -48,7 +29,7 @@ or
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase - [Setup Guide](docs/ONLINE_MODE_QUICK_START.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server, including a single-container Docker Compose deployment - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -59,7 +40,7 @@ or
 - Add/remove combatants with customizable visibility
 - Modify HP with configurable increment values
 - Manage temporary HP separately from regular HP
-- Bulk spawn multiple creatures with auto-colored names
+- Bulk spawn multiple creatures with optional color and number naming
 - Add and track conditions with values (e.g., "Frightened 2")
 - Integrated monster list from Pathfinder 2e Monster Core and Age of Ashes
 - Quick reference help tooltips for all major features
@@ -91,8 +72,8 @@ or
 
 ```bash
 # Clone the repository
-git clone https://github.com/Valforte/initiative-tracker.git
-cd initiative-tracker
+git clone https://github.com/Seroph386/init-tracker.git
+cd init-tracker
 
 # Install dependencies
 pnpm install
@@ -113,7 +94,37 @@ pnpm build
 pnpm preview
 ```
 
-Build output is generated in the `./docs` directory (configured for GitHub Pages deployment).
+Build output is generated in the `./dist` directory.
+
+### Run with Docker Compose
+
+The fastest self-hosted setup is a single container that serves the built app and stores online sessions in SQLite:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8787`.
+
+This starts:
+- The frontend app
+- The SQLite realtime sync server
+- A persistent Docker volume for the SQLite database
+
+The bundled frontend is built with `VITE_SQLITE_SYNC_URL=/`, so enabling online mode in the Docker deployment uses the same container for both the UI and SQLite sync API.
+
+See [docs/SELF_HOSTED_SQLITE.md](docs/SELF_HOSTED_SQLITE.md) for environment variables, volume details, and deployment notes.
+
+### Pull a Published Image
+
+If you publish the container through GitHub Actions, you can pull it from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/seroph386/init-tracker:latest
+docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
+```
+
+If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
 
 ## Usage
 
@@ -122,6 +133,7 @@ When you open the app normally, you'll see the DM interface with full controls:
 
 1. **Add Combatants**: Click the "Add" button to create new combatants
    - Enter name, HP, and initiative
+   - Optionally choose a color suffix or use `None` for plain numbering
    - Set visibility level (eye icons)
    - Use quantity field to spawn multiple creatures at once
    - Autocomplete suggestions from Monster Core database
@@ -171,6 +183,8 @@ Use On-Deck mode when you want a cleaner presentation screen that only emphasize
 http://localhost:5173/?view=on-deck
 ```
 
+![On-Deck View](docs/on-deck-view.png)
+
 You can open it in one of two ways:
 - Click the **On-Deck View** button from the DM interface when playing locally
 - Copy the generated On-Deck URL in online mode and share that link with a display device or stream overlay
@@ -188,16 +202,20 @@ This mode works especially well for TVs, projectors, and OBS/browser-source over
 Enable real-time multiplayer sync to share combat sessions with remote players:
 
 1. **Toggle Online Mode**: Click the "Online Mode" toggle in the DM view
-2. **Share URL**: Click "Copy Player URL" and send it to your players
-3. **Real-time Sync**: All changes are instantly visible to all connected players
+2. **Choose Backend**: Select Firebase or SQLite in Settings before enabling it
+3. **Share URL**: Click "Copy Player URL" and send it to your players
+4. **Real-time Sync**: All changes are instantly visible to all connected players
 
-See the [Quick Start Guide](docs/ONLINE_MODE_QUICK_START.md) for setup instructions (takes ~15 minutes).
+Setup guides:
+- [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md)
+- [Self-Hosted SQLite Setup](docs/SELF_HOSTED_SQLITE.md)
 
 **Benefits**:
 - Perfect for remote/hybrid games
 - No need for screen sharing
 - Players get their own clean interface
 - Works alongside in-person play
+- Can be fully self-hosted without depending on Google/Firebase
 
 ### Multi-Table Setup
 If you need to run multiple tables simultaneously:
@@ -227,12 +245,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [Vue 3](https://vuejs.org/), [Tailwind CSS](https://tailwindcss.com/), and [DaisyUI](https://daisyui.com/)
 - Icons by [Iconify](https://iconify.design/)
 - Monster data from Pathfinder 2e Monster Core and Age of Ashes Adventure Path
+- Original project foundation by [Gabriel Valforte](https://github.com/Valforte) via [initiative-tracker](https://github.com/Valforte/initiative-tracker)
 - Inspired by the need for a clean, modern initiative tracker for in-person play
 
 ## Support
 
 If you encounter any issues or have suggestions:
-- Open an issue on [GitHub Issues](https://github.com/Valforte/initiative-tracker/issues)
+- Open an issue on [GitHub Issues](https://github.com/Seroph386/init-tracker/issues)
 - Check existing issues to avoid duplicates
 - Provide as much detail as possible (browser, steps to reproduce, screenshots)
 

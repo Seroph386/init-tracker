@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing! This document provides guidelines and instructions for contributing to this project.
 
+This repository is maintained by Seroph386 as a divergent rework of Gabriel Valforte's original `initiative-tracker`. Please treat this repo's current code, docs, and roadmap as the source of truth when contributing.
+
 ## Table of Contents
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
@@ -33,13 +35,13 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/YOUR-USERNAME/initiative-tracker.git
-   cd initiative-tracker
+   git clone https://github.com/YOUR-USERNAME/init-tracker.git
+   cd init-tracker
    ```
 
 3. **Add upstream remote**:
    ```bash
-   git remote add upstream https://github.com/Valforte/initiative-tracker.git
+   git remote add upstream https://github.com/Seroph386/init-tracker.git
    ```
 
 4. **Install dependencies**:
