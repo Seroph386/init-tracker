@@ -44,6 +44,7 @@ const isSharedPlayerLink = computed(() => {
 })
 
 const viewMode = urlParams.get('view') || ''
+const docsDemo = urlParams.get('docs-demo') === 'readme'
 const isPlayerViewParam = viewMode === 'player' || viewMode === 'on-deck' || viewMode === 'player-simple'
 const isDMView = ref<boolean>(!isSharedPlayerLink.value && !isPlayerViewParam)
 
@@ -129,7 +130,22 @@ const combatants = computed({
   set: (v) => { if (_combatants) _combatants.value = v }
 })
 
+const docsDemoCombatants = [
+  new Combatant('Bog Witch', 48, 22, 32, [new Condition('Frightened', 1)], Visibility.Full, 0, 0),
+  new Combatant('Pumpkin Scout (1)', 18, 19, 18, [], Visibility.Half, 0, 0),
+  new Combatant('Pumpkin Scout (2)', 18, 18, 6, [new Condition('Clumsy', 1)], Visibility.None, 0, 0),
+  new Combatant('Vine Horror (Green)', 30, 16, 12, [new Condition('Grabbed', 1)], Visibility.Full, 4, 4)
+]
+
 function initializeOfflineState() {
+  if (docsDemo) {
+    _turn = ref(0)
+    _round = ref(3)
+    _combatants = ref(docsDemoCombatants)
+    isInitialized.value = true
+    return
+  }
+
   if (isSharedPlayerLink.value) {
     _turn = ref(0)
     _round = ref(1)

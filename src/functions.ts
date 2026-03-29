@@ -10,6 +10,23 @@ enum Visibility {
     Full = 2,
 }
 
+const combatantColorKeys = ['none', 'red', 'green', 'blue', 'purple', 'pink', 'brown'] as const
+type CombatantColorKey = typeof combatantColorKeys[number]
+
+function formatCombatantName(name: string, colorLabel?: string, count?: number): string {
+    if (colorLabel === undefined && count === undefined) {
+        return name
+    }
+
+    if (colorLabel === undefined) {
+        return `${name} (${count})`
+    }
+
+    return count === undefined
+        ? `${name} (${colorLabel})`
+        : `${name} (${colorLabel} ${count})`
+}
+
 /**
  * Represents a status condition affecting a combatant
  * Automatically generates a unique color based on the condition name
@@ -272,4 +289,5 @@ function colorIsDark(bgColor: string): boolean {
     return ((r * 0.299) + (g * 0.587) + (b * 0.114)) <= 100;
 }
 
-export {colorIsDark, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+export {colorIsDark, combatantColorKeys, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+export type { CombatantColorKey }

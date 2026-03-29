@@ -115,22 +115,27 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 3. Add Screenshot/GIF to README
 
-Follow the TODO comment in README.md (lines 12-35) to add a visual showcase.
+Keep the visual showcase near the top of `README.md` up to date with the latest DM, Player, and On-Deck screenshots.
 
 ### Quick Guide:
 
-**Option A - Split Screenshot:**
-1. Open two browser windows side by side
-2. Left: DM view with some combatants, conditions, and HP management visible
-3. Right: Player view (`?view=player`)
-4. Take screenshot showing both
-5. Save as `docs/screenshot.png`
-6. In README, replace the TODO comment with:
-   ```markdown
-   ![DM and Player Views](docs/screenshot.png)
+**Option A - Generated Screenshots (Recommended):**
+1. Start the app locally:
+   ```bash
+   pnpm dev --host 127.0.0.1 --port 4173
    ```
+2. In a second terminal, generate the docs images:
+   ```bash
+   pnpm docs:screenshots
+   ```
+3. Commit the updated `docs/dm-view.png`, `docs/player-view.png`, and `docs/on-deck-view.png`
 
-**Option B - Animated Demo (Recommended):**
+**Option B - Manual Screenshots:**
+1. Open the DM view and capture it as `docs/dm-view.png`
+2. Open the player view (`?view=player`) and capture it as `docs/player-view.png`
+3. Open the on-deck view (`?view=on-deck`) and capture it as `docs/on-deck-view.png`
+
+**Option C - Animated Demo:**
 1. Install screen recording tool:
    - macOS: [Kap](https://getkap.co/) (free)
    - Windows: [ScreenToGif](https://www.screentogif.com/) (free)
