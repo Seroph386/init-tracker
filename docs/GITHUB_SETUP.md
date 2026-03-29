@@ -2,11 +2,13 @@
 
 This document contains final setup steps to make your repository fully polished and discoverable.
 
+This guide assumes the `Seroph386/init-tracker` repository. Credit for the original upstream project goes to Gabriel Valforte, but this repository is maintained as a divergent rework with its own code and documentation.
+
 ## 1. Add Repository Topics
 
 Topics help people discover your project. Add these on GitHub:
 
-1. Go to your repository: https://github.com/Valforte/initiative-tracker
+1. Go to your repository: https://github.com/Seroph386/init-tracker
 2. Click the ⚙️ (gear) icon next to "About" on the right sidebar
 3. Add these topics (click "Add topics"):
 
@@ -15,6 +17,7 @@ Topics help people discover your project. Add these on GitHub:
 pathfinder
 pathfinder-2e
 pf2e
+init-tracker
 initiative-tracker
 combat-tracker
 rpg
@@ -33,7 +36,7 @@ dm-tools
 ```
 
 4. While you're there, also set:
-   - **Website**: `https://valforte.github.io/Initiative-Tracker/`
+   - **Website**: `https://seroph386.github.io/init-tracker/`
    - **Description**: `A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views`
    - Check ✅ **Releases** (once you create releases)
    - Check ✅ **Packages** (if you publish to npm)
@@ -42,7 +45,7 @@ dm-tools
 
 When you're ready to announce your first stable version:
 
-1. Go to: https://github.com/Valforte/initiative-tracker/releases/new
+1. Go to: https://github.com/Seroph386/init-tracker/releases/new
 2. Click "Choose a tag" → Type `v1.0.0` → Click "Create new tag: v1.0.0 on publish"
 3. **Release title**: `v1.0.0 - Initial Release`
 4. **Description** (use this template):
@@ -89,7 +92,7 @@ First stable release of Pathfinder 2e Initiative Tracker!
 
 ## 🎮 Try it Now
 
-**Live Demo**: https://valforte.github.io/Initiative-Tracker/
+**Live Demo**: https://seroph386.github.io/init-tracker/
 
 ## 📦 Built With
 
@@ -166,7 +169,7 @@ Follow the TODO comment in README.md (lines 12-35) to add a visual showcase.
 - See `GIT_WORKFLOW.md` for detailed explanation
 - Your workflow file: `.github/workflows/deploy.yml`
 
-The site will be available at: https://valforte.github.io/Initiative-Tracker/
+The site will be available at: https://seroph386.github.io/init-tracker/
 
 ## 5. Enable GitHub Discussions (Optional)
 
@@ -201,8 +204,8 @@ I've built a free initiative tracker specifically for PF2e with features like:
 - 35+ themes
 - Works completely in-browser (no server needed)
 
-Live demo: https://valforte.github.io/Initiative-Tracker/
-GitHub (MIT license): https://github.com/Valforte/initiative-tracker
+Live demo: https://seroph386.github.io/init-tracker/
+GitHub (MIT license): https://github.com/Seroph386/init-tracker
 
 Would love feedback from the community!
 ```
@@ -218,7 +221,7 @@ Would love feedback from the community!
 - 35+ themes
 - Fully localized
 
-Try it: https://valforte.github.io/Initiative-Tracker/
+Try it: https://seroph386.github.io/init-tracker/
 
 #PF2e #TTRPG #OpenSource
 ```

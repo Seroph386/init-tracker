@@ -1,13 +1,15 @@
 # 🎲 Pathfinder 2e Initiative Tracker
 
-![CI](https://github.com/Valforte/initiative-tracker/workflows/CI/badge.svg)
-![License](https://img.shields.io/github/license/Valforte/initiative-tracker)
-![Version](https://img.shields.io/github/package-json/v/Valforte/initiative-tracker)
-![Stars](https://img.shields.io/github/stars/Valforte/initiative-tracker?style=social)
+![CI](https://github.com/Seroph386/init-tracker/workflows/CI/badge.svg)
+![License](https://img.shields.io/github/license/Seroph386/init-tracker)
+![Version](https://img.shields.io/github/package-json/v/Seroph386/init-tracker)
+![Stars](https://img.shields.io/github/stars/Seroph386/init-tracker?style=social)
 
 A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views. Built with Vue 3, TypeScript, and Tailwind CSS. 
 
-**[🎮 Live Demo](https://valforte.github.io/Initiative-Tracker/)**
+**[🎮 Live Demo](https://seroph386.github.io/init-tracker/)**
+
+Maintained by Seroph386 as a divergent rework of [Gabriel Valforte's initiative-tracker](https://github.com/Valforte/initiative-tracker). Credit to the original project for the foundation and inspiration, but treat this repository as its own actively maintained solution.
 
 ## DM View
 ![DM View](docs/dm-view.png)
@@ -27,7 +29,7 @@ A modern, themeable initiative tracker for Pathfinder 2e combat encounters with 
 - 🎯 **Condition Tracking**: Add, modify, and remove conditions with auto-generated color-coding
 - 🔄 **Dual View System**: Separate interfaces for DM (full control) and players (read-only)
 - 💾 **Auto-Save**: All combat state persists automatically to localStorage
-- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
+- 🌐 **Online Mode (Optional)**: Enable real-time multiplayer sync using Firebase or a self-hosted SQLite server, including a single-container Docker Compose deployment - [Firebase Quick Start](docs/ONLINE_MODE_QUICK_START.md) / [SQLite Self-Hosting](docs/SELF_HOSTED_SQLITE.md)
 
 ### Customization
 - 🎨 **35+ Themes**: Choose from a wide variety of DaisyUI themes with live preview
@@ -70,8 +72,8 @@ A modern, themeable initiative tracker for Pathfinder 2e combat encounters with 
 
 ```bash
 # Clone the repository
-git clone https://github.com/Valforte/initiative-tracker.git
-cd initiative-tracker
+git clone https://github.com/Seroph386/init-tracker.git
+cd init-tracker
 
 # Install dependencies
 pnpm install
@@ -92,7 +94,37 @@ pnpm build
 pnpm preview
 ```
 
-Build output is generated in the `./docs` directory (configured for GitHub Pages deployment).
+Build output is generated in the `./dist` directory.
+
+### Run with Docker Compose
+
+The fastest self-hosted setup is a single container that serves the built app and stores online sessions in SQLite:
+
+```bash
+docker compose up --build
+```
+
+Then open `http://localhost:8787`.
+
+This starts:
+- The frontend app
+- The SQLite realtime sync server
+- A persistent Docker volume for the SQLite database
+
+The bundled frontend is built with `VITE_SQLITE_SYNC_URL=/`, so enabling online mode in the Docker deployment uses the same container for both the UI and SQLite sync API.
+
+See [docs/SELF_HOSTED_SQLITE.md](docs/SELF_HOSTED_SQLITE.md) for environment variables, volume details, and deployment notes.
+
+### Pull a Published Image
+
+If you publish the container through GitHub Actions, you can pull it from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/seroph386/init-tracker:latest
+docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
+```
+
+If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
 
 ## Usage
 
@@ -213,12 +245,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [Vue 3](https://vuejs.org/), [Tailwind CSS](https://tailwindcss.com/), and [DaisyUI](https://daisyui.com/)
 - Icons by [Iconify](https://iconify.design/)
 - Monster data from Pathfinder 2e Monster Core and Age of Ashes Adventure Path
+- Original project foundation by [Gabriel Valforte](https://github.com/Valforte) via [initiative-tracker](https://github.com/Valforte/initiative-tracker)
 - Inspired by the need for a clean, modern initiative tracker for in-person play
 
 ## Support
 
 If you encounter any issues or have suggestions:
-- Open an issue on [GitHub Issues](https://github.com/Valforte/initiative-tracker/issues)
+- Open an issue on [GitHub Issues](https://github.com/Seroph386/init-tracker/issues)
 - Check existing issues to avoid duplicates
 - Provide as much detail as possible (browser, steps to reproduce, screenshots)
 

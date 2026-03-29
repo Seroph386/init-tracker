@@ -8,6 +8,7 @@ const port = Number(process.env.SQLITE_SYNC_PORT || '8787')
 const host = process.env.SQLITE_SYNC_HOST || '0.0.0.0'
 const dbPath = process.env.SQLITE_SYNC_DB_PATH || './data/initiative-tracker.sqlite'
 const staticDir = process.env.SQLITE_SYNC_STATIC_DIR || ''
+const staticBasePath = normalizeStaticBasePath(process.env.SQLITE_SYNC_STATIC_BASE_PATH || '/')
 
 await mkdir(dirname(dbPath), { recursive: true }).catch(() => {})
 
@@ -53,6 +54,15 @@ const sessionVersionStatement = database.prepare(`
   FROM sessions
   WHERE session_id = ?
 `)
+
+function normalizeStaticBasePath(value) {
+  if (!value || value === '/') {
+    return '/'
+  }
+
+  const withLeadingSlash = value.startsWith('/') ? value : `/${value}`
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash
+}
 
 function ensureSession(sessionId, defaultStateJson) {
   ensureSessionStatement.run(sessionId, defaultStateJson)
@@ -148,9 +158,34 @@ function resolveStaticPath(urlPath) {
   }
 
   const decodedPath = decodeURIComponent(urlPath)
-  const relativePath = decodedPath === '/' ? '/index.html' : decodedPath
+  const relativePath = getStaticRelativePath(decodedPath)
+
+  if (!relativePath) {
+    return null
+  }
+
   const normalizedPath = normalize(relativePath).replace(/^(\.\.[/\\])+/, '')
   return join(staticDir, normalizedPath)
+}
+
+function getStaticRelativePath(urlPath) {
+  if (staticBasePath === '/') {
+    return urlPath === '/' ? '/index.html' : urlPath
+  }
+
+  if (urlPath === '/' || urlPath === '') {
+    return null
+  }
+
+  if (urlPath === staticBasePath || urlPath === `${staticBasePath}/`) {
+    return '/index.html'
+  }
+
+  if (!urlPath.startsWith(`${staticBasePath}/`)) {
+    return null
+  }
+
+  return urlPath.slice(staticBasePath.length) || '/index.html'
 }
 
 async function serveStaticFile(urlPath, response) {
@@ -171,7 +206,7 @@ async function serveStaticFile(urlPath, response) {
     createReadStream(filePath).pipe(response)
     return true
   } catch {
-    if (urlPath !== '/') {
+    if (urlPath !== '/' && urlPath !== staticBasePath && urlPath !== `${staticBasePath}/`) {
       try {
         const fallbackPath = join(staticDir, 'index.html')
         await readFile(fallbackPath)
@@ -296,6 +331,14 @@ const server = createServer(async (request, response) => {
     return
   }
 
+  if (request.method === 'GET' && staticDir && staticBasePath !== '/' && pathname === '/') {
+    response.writeHead(302, {
+      Location: `${staticBasePath}/`
+    })
+    response.end()
+    return
+  }
+
   const served = await serveStaticFile(pathname, response)
   if (served) {
     return
@@ -311,5 +354,6 @@ server.listen(port, host, () => {
   console.log(`SQLite database: ${dbPath}`)
   if (staticDir) {
     console.log(`Serving static files from: ${staticDir}`)
+    console.log(`Static app base path: ${staticBasePath}`)
   }
 })
