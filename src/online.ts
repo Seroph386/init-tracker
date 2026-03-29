@@ -23,6 +23,10 @@ function normalizeBaseUrl(url: string): string {
   return url.replace(/\/+$/, '')
 }
 
+function getConfiguredSqliteSyncUrl(): string {
+  return import.meta.env.VITE_SQLITE_SYNC_URL?.trim() ?? ''
+}
+
 export function normalizeOnlineProvider(value: string | null | undefined): OnlineProvider | '' {
   return value === 'firebase' || value === 'sqlite' ? value : ''
 }
@@ -32,12 +36,21 @@ export function isFirebaseConfigured(): boolean {
 }
 
 export function getSqliteSyncBaseUrl(): string {
-  const configuredUrl = import.meta.env.VITE_SQLITE_SYNC_URL?.trim()
-  return configuredUrl ? normalizeBaseUrl(configuredUrl) : ''
+  const configuredUrl = getConfiguredSqliteSyncUrl()
+
+  if (!configuredUrl) {
+    return ''
+  }
+
+  if (configuredUrl === '/') {
+    return ''
+  }
+
+  return normalizeBaseUrl(configuredUrl)
 }
 
 export function isSqliteConfigured(): boolean {
-  return Boolean(getSqliteSyncBaseUrl())
+  return Boolean(getConfiguredSqliteSyncUrl())
 }
 
 export function isOnlineProviderConfigured(provider: OnlineProvider): boolean {
@@ -82,7 +95,8 @@ export async function initializeConfiguredOnlineProviders(): Promise<void> {
 }
 
 function getSqliteSyncUrl(path: string): string {
-  return `${getSqliteSyncBaseUrl()}${path}`
+  const baseUrl = getSqliteSyncBaseUrl()
+  return baseUrl ? `${baseUrl}${path}` : path
 }
 
 async function waitForSqlite(timeoutMs: number = 5000): Promise<boolean> {

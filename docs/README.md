@@ -8,7 +8,7 @@ This directory contains all project documentation for the Pathfinder 2e Initiati
 - **[QUICK_START.md](QUICK_START.md)** - Quick start guide for local usage
 - **[ONLINE_MODE_QUICK_START.md](ONLINE_MODE_QUICK_START.md)** - Quick setup guide for online mode
 - **[ONLINE_MODE_SETUP.md](ONLINE_MODE_SETUP.md)** - Detailed online mode configuration
-- **[SELF_HOSTED_SQLITE.md](SELF_HOSTED_SQLITE.md)** - Self-hosted SQLite realtime setup
+- **[SELF_HOSTED_SQLITE.md](SELF_HOSTED_SQLITE.md)** - Self-hosted SQLite realtime setup, including Docker Compose
 
 ### Developer Documentation
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contributing guidelines
