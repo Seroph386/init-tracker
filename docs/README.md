@@ -1,6 +1,6 @@
 # Documentation
 
-This directory contains all project documentation for the Pathfinder 2e Initiative Tracker.
+This directory contains all project documentation for Init Tracker.
 
 ## Contents
 
@@ -11,6 +11,7 @@ This directory contains all project documentation for the Pathfinder 2e Initiati
 - **[SELF_HOSTED_SQLITE.md](SELF_HOSTED_SQLITE.md)** - Self-hosted SQLite realtime setup, including Docker Compose
 
 ### Developer Documentation
+- **[../AGENTS.md](../AGENTS.md)** - Repo-wide instructions for AI coding agents
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contributing guidelines
 - **[CLAUDE.md](CLAUDE.md)** - Instructions for Claude Code AI assistant
 - **[GIT_WORKFLOW.md](GIT_WORKFLOW.md)** - Git workflow and best practices
@@ -25,4 +26,4 @@ This directory contains all project documentation for the Pathfinder 2e Initiati
 
 - [Main README](../README.md) - Project overview and features
 - [LICENSE](../LICENSE) - MIT License
-- [Live Demo](https://valforte.github.io/Initiative-Tracker/)
+- [Live Demo](https://seroph386.github.io/init-tracker/)
