@@ -1,13 +1,15 @@
 # 🎲 Pathfinder 2e Initiative Tracker
 
-![CI](https://github.com/Valforte/initiative-tracker/workflows/CI/badge.svg)
-![License](https://img.shields.io/github/license/Valforte/initiative-tracker)
-![Version](https://img.shields.io/github/package-json/v/Valforte/initiative-tracker)
-![Stars](https://img.shields.io/github/stars/Valforte/initiative-tracker?style=social)
+![CI](https://github.com/Seroph386/init-tracker/workflows/CI/badge.svg)
+![License](https://img.shields.io/github/license/Seroph386/init-tracker)
+![Version](https://img.shields.io/github/package-json/v/Seroph386/init-tracker)
+![Stars](https://img.shields.io/github/stars/Seroph386/init-tracker?style=social)
 
 A modern, themeable initiative tracker for Pathfinder 2e combat encounters with separate DM and player views. Built with Vue 3, TypeScript, and Tailwind CSS. 
 
-**[🎮 Live Demo](https://valforte.github.io/Initiative-Tracker/)**
+**[🎮 Live Demo](https://seroph386.github.io/init-tracker/)**
+
+Maintained by Seroph386 as a divergent rework of [Gabriel Valforte's initiative-tracker](https://github.com/Valforte/initiative-tracker). Credit to the original project for the foundation and inspiration, but treat this repository as its own actively maintained solution.
 
 <!-- TODO: Add screenshot or animated GIF here
 Suggested content to showcase:
@@ -91,8 +93,8 @@ or
 
 ```bash
 # Clone the repository
-git clone https://github.com/Valforte/initiative-tracker.git
-cd initiative-tracker
+git clone https://github.com/Seroph386/init-tracker.git
+cd init-tracker
 
 # Install dependencies
 pnpm install
@@ -139,11 +141,11 @@ See [docs/SELF_HOSTED_SQLITE.md](docs/SELF_HOSTED_SQLITE.md) for environment var
 If you publish the container through GitHub Actions, you can pull it from GitHub Container Registry:
 
 ```bash
-docker pull ghcr.io/valforte/initiative-tracker:latest
-docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/valforte/initiative-tracker:latest
+docker pull ghcr.io/seroph386/init-tracker:latest
+docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
-If you are publishing from a fork, replace `valforte/initiative-tracker` with your own GitHub `owner/repo`.
+If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
 
 ## Usage
 
@@ -261,12 +263,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Built with [Vue 3](https://vuejs.org/), [Tailwind CSS](https://tailwindcss.com/), and [DaisyUI](https://daisyui.com/)
 - Icons by [Iconify](https://iconify.design/)
 - Monster data from Pathfinder 2e Monster Core and Age of Ashes Adventure Path
+- Original project foundation by [Gabriel Valforte](https://github.com/Valforte) via [initiative-tracker](https://github.com/Valforte/initiative-tracker)
 - Inspired by the need for a clean, modern initiative tracker for in-person play
 
 ## Support
 
 If you encounter any issues or have suggestions:
-- Open an issue on [GitHub Issues](https://github.com/Valforte/initiative-tracker/issues)
+- Open an issue on [GitHub Issues](https://github.com/Seroph386/init-tracker/issues)
 - Check existing issues to avoid duplicates
 - Provide as much detail as possible (browser, steps to reproduce, screenshots)
 

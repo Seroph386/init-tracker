@@ -56,11 +56,11 @@ The workflow runs on:
 ### Pull and run the published image
 
 ```bash
-docker pull ghcr.io/valforte/initiative-tracker:latest
-docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/valforte/initiative-tracker:latest
+docker pull ghcr.io/seroph386/init-tracker:latest
+docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
-If you are publishing from a fork, replace `valforte/initiative-tracker` with your own GitHub `owner/repo`.
+If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
 
 Useful commands:
 
