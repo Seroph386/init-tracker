@@ -4,14 +4,10 @@ This document explains how your git branches and automated workflows are set up.
 
 ## Branch Strategy
 
-Your repository uses a **two-branch strategy**:
+Your repository uses a **main-branch deployment strategy**:
 
 ```
-main (development)
-  ↓
-  ↓ [when ready for production]
-  ↓
-prod (production/deployment)
+main (development + deployment)
 ```
 
 ### `main` branch
@@ -21,14 +17,8 @@ prod (production/deployment)
   - Feature development
   - Bug fixes
   - Pull requests from contributors
-- **Automated checks**: CI runs tests, type-check, and build (but doesn't deploy)
-
-### `prod` branch
-- **Purpose**: Production releases
-- **What happens here**:
-  - Stable, tested code ready for users
-  - Triggers automatic deployment to GitHub Pages
-- **Automated checks**: CI + automatic deployment to live site
+- Merged changes ready for users
+- **Automated checks**: CI runs tests, type-check, and build, and the Pages deploy workflow publishes the site from `main`
 
 ---
 
@@ -38,7 +28,7 @@ You have **2 automated workflows** that run on GitHub's servers:
 
 ### 1. CI Workflow (`.github/workflows/ci.yml`)
 
-**Triggers**: Runs on every push or pull request to `main` or `prod`
+**Triggers**: Runs on every push or pull request to `main`
 
 **What it does**:
 ```
@@ -71,7 +61,7 @@ Step 7: Build (pnpm build)
 
 ### 2. Deploy Workflow (`.github/workflows/deploy.yml`)
 
-**Triggers**: ONLY runs when you push to `prod` branch
+**Triggers**: Runs when you push to `main`, or manually via `workflow_dispatch`
 
 **What it does**:
 ```
@@ -89,13 +79,14 @@ Step 4: Install dependencies
    ↓ Downloads all dependencies
 
 Step 5: Build for production (pnpm build)
-   ↓ Creates optimized production build in ./docs folder
+   ↓ Creates optimized production build in ./dist folder
+   ↓ Uses VITE_APP_BASE_PATH=/init-tracker/ for GitHub Pages asset URLs
 
 Step 6: Setup Pages
    ↓ Configures GitHub Pages settings
 
 Step 7: Upload artifact
-   ↓ Packages the ./docs folder for deployment
+   ↓ Packages the ./dist folder for deployment
    ↓
    ↓ (waits for BUILD JOB to complete)
    ↓
@@ -106,7 +97,7 @@ Step 8: Deploy to GitHub Pages
    🌐 Site is now live at: https://seroph386.github.io/init-tracker/
 ```
 
-**Purpose**: Automatically deploys your site when you're ready to release.
+**Purpose**: Automatically deploys the latest `main` branch to GitHub Pages.
 
 ---
 
@@ -140,37 +131,15 @@ git push origin feature/add-new-theme
 #    - Run your tests
 #    - Check types
 #    - Try to build
+#    - Deploy the Pages site from main
 #    - Show ✅ or ❌ on GitHub
 ```
 
 **At this point**:
 - Code is on GitHub
-- Tests ran automatically
-- But site is NOT deployed yet (still on old version)
-
-### Deploying to Production
-
-When you're ready to release to users:
-
-```bash
-# 1. Make sure main is stable and tests pass
-git checkout main
-git pull origin main  # Get latest changes
-
-# 2. Merge main into prod
-git checkout prod
-git pull origin prod  # Get latest prod
-git merge main        # Bring main's changes into prod
-
-# 3. Push to prod
-git push origin prod
-
-# 4. GitHub Actions will automatically:
-#    - Run CI tests (to double-check)
-#    - Build the project
-#    - Deploy to GitHub Pages
-#    - Your live site updates in ~2 minutes!
-```
+- Tests run automatically
+- The Pages deployment workflow also publishes the site from `main`
+- Your live site updates after the workflow finishes
 
 ---
 
@@ -185,9 +154,9 @@ git push origin prod
 - Doesn't affect live site
 
 **Deploy (Continuous Deployment)**:
-- Runs ONLY when you explicitly push to `prod`
-- You control when users see changes
-- Gives you time to test on `main` first
+- Runs from `main`
+- Publishes the built `dist` artifact to GitHub Pages
+- Can also be run manually from the Actions tab
 
 ### What "build" does
 
@@ -204,7 +173,7 @@ Your source code (src/*.vue, src/*.ts)
    ↓ - Optimizes images and assets
    ↓ - Applies Tailwind CSS
    ↓
-Output: ./docs folder
+Output: ./dist folder
    ├── index.html (entry point)
    ├── assets/
    │   ├── index-[hash].js (your code, bundled)
@@ -212,9 +181,9 @@ Output: ./docs folder
    └── [images/icons]
 ```
 
-This `./docs` folder is what gets deployed to GitHub Pages.
+This `./dist` folder is what gets deployed to GitHub Pages.
 
-### Why `./docs` is ignored in git
+### Why `./dist` is not tracked in git
 
 **Problem**: Build files are large, change constantly, and are auto-generated
 **Solution**: Don't track them in git, generate them fresh each deployment
@@ -226,7 +195,7 @@ This `./docs` folder is what gets deployed to GitHub Pages.
 - Merge conflicts on build files
 
 **Now** (proper way):
-- `docs/` is in `.gitignore`
+- `dist/` is generated only for deployment
 - GitHub Actions builds fresh each time
 - Git only tracks source code
 - Cleaner history
@@ -242,10 +211,9 @@ This `./docs` folder is what gets deployed to GitHub Pages.
 pnpm build
 pnpm preview  # Runs local server with production build
 
-# Option 2: Push to main, check if CI passes, then merge to prod
+# Option 2: Push to main and let the deploy workflow publish after CI/build succeeds
 git push origin main
-# Wait for CI to pass (check GitHub)
-# If green ✅, then merge to prod
+# Wait for the Actions runs to pass (check GitHub)
 ```
 
 ### "I pushed to main and CI failed"
@@ -267,12 +235,12 @@ git push origin main
 ### "I want to rollback the live site"
 
 ```bash
-# 1. Go back to a previous commit on prod
-git checkout prod
-git reset --hard <commit-hash-of-good-version>
-git push --force origin prod
+# 1. Revert the bad commit on main
+git checkout main
+git revert <commit-hash-of-bad-version>
+git push origin main
 
-# 2. GitHub Actions will redeploy the old version
+# 2. GitHub Actions will redeploy the reverted version
 ```
 
 ### "How do I know if deployment worked?"
@@ -280,8 +248,8 @@ git push --force origin prod
 1. Go to your repo on GitHub
 2. Click "Actions" tab at top
 3. You'll see:
-   - **CI workflow** (runs on main and prod)
-   - **Deploy workflow** (runs only on prod)
+   - **CI workflow**
+   - **Deploy workflow**
 4. Click the latest "Deploy to GitHub Pages" run
 5. Watch the steps execute (takes ~2 min)
 6. When complete, visit: https://seroph386.github.io/init-tracker/
@@ -318,18 +286,12 @@ git push --force origin prod
 │  6. ✅ All pass → Green checkmark                        │
 │     ❌ Any fail → Red X (fix and push again)            │
 │                                                          │
-│  ⏸️  PAUSE: You decide when to deploy                   │
-│                                                          │
-│  7. When ready: git checkout prod                       │
-│                 git merge main                          │
-│                 git push origin prod                    │
-│     ↓                                                    │
-│  8. ⚡ Deploy Workflow triggers automatically            │
+│  7. ⚡ Deploy Workflow triggers automatically            │
 │     ├─ Build production bundle                          │
-│     ├─ Package ./docs folder                           │
+│     ├─ Package ./dist folder                            │
 │     └─ Deploy to GitHub Pages                          │
 │     ↓                                                    │
-│  9. 🌐 Site updates at:                                 │
+│  8. 🌐 Site updates at:                                 │
 │       https://seroph386.github.io/init-tracker/         │
 │                                                          │
 └─────────────────────────────────────────────────────────┘
@@ -344,7 +306,8 @@ You need to configure GitHub Pages to use the Actions deployment:
 1. Go to your repo on GitHub
 2. Click **Settings** → **Pages** (left sidebar)
 3. Under "Build and deployment":
-   - **Source**: Select "GitHub Actions" (NOT "Deploy from a branch")
+   - **Source**: Select "GitHub Actions"
+   - Do not choose "GitHub Pages Jekyll"
 4. Save
 
 That's it! Now the deploy workflow will handle everything.
@@ -362,11 +325,6 @@ git add .
 git commit -m "feat: description"
 git push origin main
 
-# Deployment (when ready for users)
-git checkout prod
-git merge main
-git push origin prod
-
 # Check status
 git status              # See what's changed locally
 git log --oneline -5    # See recent commits
@@ -374,7 +332,6 @@ git branch -a           # See all branches
 
 # If you need to switch branches
 git checkout main       # Switch to main
-git checkout prod       # Switch to prod
 ```
 
 ---
@@ -382,10 +339,10 @@ git checkout prod       # Switch to prod
 ## Summary
 
 **What you need to remember**:
-1. **Work on `main`** - push whenever you want, CI checks quality
-2. **Merge to `prod`** - only when ready to release, triggers deployment
-3. **GitHub Actions** - robots that test and deploy for you automatically
-4. **`./docs` folder** - ignored in git, built fresh each deployment
+1. **Work on `main`** - merged changes there are what get deployed
+2. **GitHub Actions** - robots that test and deploy for you automatically
+3. **GitHub Pages** must be configured to use the workflow, not branch files
+4. **`./dist`** is built fresh during deployment and not committed
 
 That's it! The robots (GitHub Actions) handle the testing and deployment for you. You just write code and decide when to release. 🤖
 
@@ -404,7 +361,7 @@ That's it! The robots (GitHub Actions) handle the testing and deployment for you
 - Wait 2-3 minutes for CDN to update
 
 **Q: I don't see the deploy workflow running?**
-- Check you pushed to `prod`, not `main`
+- Check you pushed to `main`
 - Check GitHub Pages is set to "GitHub Actions" source
 
 **Q: Build works locally but fails in Actions?**

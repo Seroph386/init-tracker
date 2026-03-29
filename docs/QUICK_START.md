@@ -35,16 +35,7 @@ git push origin main
 - ✅ Check types
 - ✅ Try to build
 
-Check the ✅ or ❌ on GitHub before deploying.
-
-## Deploying to Production
-
-```bash
-# When ready to release to users
-git checkout prod
-git merge main
-git push origin prod
-```
+Check the ✅ or ❌ on GitHub while the deploy workflow runs.
 
 **GitHub Actions will automatically**:
 - 🏗️ Build the site
@@ -65,8 +56,7 @@ pnpm run type-check # Check TypeScript types
 
 ## Branch Strategy
 
-- **`main`**: Development branch - push here for daily work
-- **`prod`**: Production branch - merge here to deploy to users
+- **`main`**: Development branch and GitHub Pages deploy source
 
 ## Need More Info?
 
@@ -95,6 +85,7 @@ pnpm build  # Try building locally first
 **Site not updating after deploy?**
 - Hard refresh: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
 - Wait 2-3 minutes for GitHub Pages CDN
+- Check `Settings -> Pages` is using the GitHub Actions workflow, not branch file serving
 
 ## Getting Help
 

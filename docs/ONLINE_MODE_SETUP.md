@@ -145,10 +145,10 @@ pnpm preview
 
 ### GitHub Pages Deployment
 
-1. Push your changes to the `prod` branch:
+1. Push your changes to the `main` branch:
 
 ```bash
-git push origin prod
+git push origin main
 ```
 
 2. GitHub Actions will automatically build and deploy

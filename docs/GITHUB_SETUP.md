@@ -161,11 +161,13 @@ Keep the visual showcase near the top of `README.md` up to date with the latest 
 
 1. Go to Settings → Pages
 2. Under "Build and deployment":
-   - **Source**: Select **"GitHub Actions"** (not "Deploy from a branch")
-3. That's it!
+   - **Source**: Select **"GitHub Actions"**
+   - Do not choose **"GitHub Pages Jekyll"** for this project
+3. Confirm the Pages deployment uses the repository workflow rather than serving files directly from a branch
 
 **How it works**:
-- When you push to `prod` branch, GitHub Actions automatically builds and deploys
+- When you push to `main`, GitHub Actions automatically builds and deploys
+- The workflow sets `VITE_APP_BASE_PATH=/init-tracker/` so built assets resolve correctly on `https://seroph386.github.io/init-tracker/`
 - See `GIT_WORKFLOW.md` for detailed explanation
 - Your workflow file: `.github/workflows/deploy.yml`
 
