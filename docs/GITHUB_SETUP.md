@@ -115,7 +115,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 3. Add Screenshot/GIF to README
 
-Follow the TODO comment in README.md (lines 12-35) to add a visual showcase.
+Keep the visual showcase near the top of `README.md` up to date with the latest DM, Player, and On-Deck screenshots.
 
 ### Quick Guide:
 
