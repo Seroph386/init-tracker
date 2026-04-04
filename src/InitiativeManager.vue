@@ -82,6 +82,41 @@ watch([sessionId, () => window.location.search], () => {
 // Get game system setting
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
 
+type SavedEncounter = {
+  id: string
+  name: string
+  combatants: Combatant[]
+}
+
+const savedEncounters = useStorage<SavedEncounter[]>(
+  'savedEncounters',
+  [],
+  undefined,
+  {
+    serializer: {
+      read: (v: any) => {
+        if (!v) return []
+        const parsedItems = Array.isArray(v) ? v : JSON.parse(v)
+        return parsedItems.map((encounter: any) => ({
+          id: encounter.id,
+          name: encounter.name,
+          combatants: (encounter.combatants || []).map((combatant: any) => new Combatant(
+            combatant.name,
+            combatant.totalHP,
+            combatant.initiative,
+            combatant.currentHP,
+            (combatant.conditions || []).map((condition: any) => new Condition(condition.name, condition.value)),
+            combatant.visibility,
+            combatant.tempHP || 0,
+            combatant.maxTempHP || 0
+          ))
+        }))
+      },
+      write: (v: any) => JSON.stringify(v)
+    }
+  }
+)
+
 // Custom serializer for Combatant objects
 const combatantSerializer = {
   read: (v: any) => {
@@ -425,6 +460,53 @@ function resetToDefaults(): void {
   combatants.value = getDefaultCombatants(gameSystem.value)
 }
 
+function saveEncounter(name: string): void {
+  const encounterId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const snapshot = orderedCombatants.value.map((combatant: Combatant) => new Combatant(
+    combatant.name,
+    combatant.totalHP,
+    combatant.initiative,
+    combatant.currentHP,
+    combatant.conditions.map((condition: Condition) => new Condition(condition.name, condition.value)),
+    combatant.visibility,
+    combatant.tempHP || 0,
+    combatant.maxTempHP || 0
+  ))
+
+  savedEncounters.value = [
+    ...savedEncounters.value,
+    {
+      id: encounterId,
+      name,
+      combatants: snapshot
+    }
+  ]
+}
+
+function loadEncounter(encounterId: string): void {
+  const selected = savedEncounters.value.find((encounter) => encounter.id === encounterId)
+  if (!selected) {
+    return
+  }
+
+  combatants.value = selected.combatants.map((combatant) => new Combatant(
+    combatant.name,
+    combatant.totalHP,
+    combatant.initiative,
+    combatant.currentHP,
+    combatant.conditions.map((condition) => new Condition(condition.name, condition.value)),
+    combatant.visibility,
+    combatant.tempHP || 0,
+    combatant.maxTempHP || 0
+  ))
+  turn.value = 0
+  round.value = 1
+}
+
+function deleteEncounter(encounterId: string): void {
+  savedEncounters.value = savedEncounters.value.filter((encounter) => encounter.id !== encounterId)
+}
+
 </script>
 
 <template>
@@ -442,6 +524,7 @@ function resetToDefaults(): void {
       :onlineProvider="onlineProvider"
       :availableOnlineProviders="availableOnlineProviders"
       :isOnlineAvailable="isOnlineAvailable"
+      :savedEncounters="savedEncounters.map(encounter => ({ id: encounter.id, name: encounter.name }))"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
@@ -449,6 +532,9 @@ function resetToDefaults(): void {
       @removeCombatant="removeCombatant"
       @toggleOnlineMode="toggleOnlineMode"
       @setOnlineProvider="setOnlineProvider"
+      @saveEncounter="saveEncounter"
+      @loadEncounter="loadEncounter"
+      @deleteEncounter="deleteEncounter"
   />
 
   <PlayerSimpleView

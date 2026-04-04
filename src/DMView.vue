@@ -31,6 +31,9 @@ const emit = defineEmits<{
   (e: 'removeCombatant', index: number): void
   (e: 'toggleOnlineMode', value: boolean): void
   (e: 'setOnlineProvider', value: OnlineProvider): void
+  (e: 'saveEncounter', name: string): void
+  (e: 'loadEncounter', id: string): void
+  (e: 'deleteEncounter', id: string): void
 }>()
 
 const props = defineProps<{
@@ -42,6 +45,7 @@ const props = defineProps<{
   onlineProvider: OnlineProvider | '',
   availableOnlineProviders: OnlineProvider[],
   isOnlineAvailable: boolean,
+  savedEncounters: Array<{ id: string, name: string }>,
 }>()
 
 const copiedButton = ref<'player' | 'on-deck' | null>(null)
@@ -57,6 +61,9 @@ const newVisibility = ref(Visibility.None)
 const newColor = ref<CombatantColorKey>('none')
 const newQuantity = ref(1)
 const isNewCombatantPopoverOpen = ref(false)
+const newEncounterName = ref('')
+const selectedEncounterId = ref('')
+const encounterError = ref('')
 const colorOptions = computed(() =>
   combatantColorKeys.map((colorKey) => ({
     value: colorKey,
@@ -131,6 +138,35 @@ function addCombatant(): void {
 
 function removeCombatant(index: number): void {
   emit('removeCombatant', index)
+}
+
+function saveEncounter(): void {
+  const trimmedName = newEncounterName.value.trim()
+  if (!trimmedName) {
+    encounterError.value = t.value.dm_actions.encounterRequired
+    return
+  }
+
+  emit('saveEncounter', trimmedName)
+  encounterError.value = ''
+  newEncounterName.value = ''
+}
+
+function loadEncounter(): void {
+  if (!selectedEncounterId.value) {
+    return
+  }
+
+  emit('loadEncounter', selectedEncounterId.value)
+}
+
+function deleteEncounter(): void {
+  if (!selectedEncounterId.value) {
+    return
+  }
+
+  emit('deleteEncounter', selectedEncounterId.value)
+  selectedEncounterId.value = ''
 }
 
 /**
@@ -308,6 +344,51 @@ async function copyOnDeckUrl(): Promise<void> {
             </PopoverContent>
           </PopoverPortal>
         </PopoverRoot>
+      </div>
+      <div class="card bg-base-200 shadow-md/30 w-full max-w-2xl">
+        <div class="card-body gap-3">
+          <h4 class="card-title text-base">{{ t.dm_actions.savedEncounters }}</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <label class="form-control md:col-span-2">
+              <span class="label-text">{{ t.dm_actions.encounterName }}</span>
+              <input
+                v-model="newEncounterName"
+                type="text"
+                class="input input-bordered w-full"
+                :placeholder="t.dm_actions.encounterName"
+              />
+            </label>
+            <button class="btn btn-neutral w-full" @click="saveEncounter">
+              <Icon icon="tabler:device-floppy" height="20" />
+              {{ t.dm_actions.saveEncounter }}
+            </button>
+          </div>
+          <p v-if="encounterError" class="text-error text-sm">{{ encounterError }}</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <label class="form-control md:col-span-2">
+              <span class="label-text">{{ t.dm_actions.savedEncounters }}</span>
+              <select v-model="selectedEncounterId" class="select select-bordered w-full">
+                <option value="" disabled>{{ t.dm_actions.savedEncounters }}</option>
+                <option v-for="encounter in savedEncounters" :key="encounter.id" :value="encounter.id">
+                  {{ encounter.name }}
+                </option>
+              </select>
+            </label>
+            <div class="flex gap-2">
+              <button class="btn btn-primary flex-1" :disabled="!selectedEncounterId" @click="loadEncounter">
+                <Icon icon="tabler:upload" height="20" />
+                {{ t.dm_actions.loadEncounter }}
+              </button>
+              <button class="btn btn-error" :disabled="!selectedEncounterId" @click="deleteEncounter">
+                <Icon icon="tabler:trash" height="20" />
+                {{ t.dm_actions.deleteEncounter }}
+              </button>
+            </div>
+          </div>
+          <p v-if="savedEncounters.length === 0" class="text-sm opacity-75">
+            {{ t.dm_actions.noSavedEncounters }}
+          </p>
+        </div>
       </div>
     </div>
     </div>
