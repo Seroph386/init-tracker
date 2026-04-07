@@ -42,6 +42,7 @@ Maintained by Seroph386 as a divergent rework of [Gabriel Valforte's initiative-
 - Manage temporary HP separately from regular HP
 - Bulk spawn multiple creatures with optional color and number naming
 - Add and track conditions with values (e.g., "Frightened 2")
+- Save named encounter snapshots with combatants, HP, temporary HP, conditions, initiative, and visibility
 - Integrated monster list from Pathfinder 2e Monster Core and Age of Ashes
 - Quick reference help tooltips for all major features
 
@@ -161,6 +162,13 @@ When you open the app normally, you'll see the DM interface with full controls:
    - Click "Next" to advance to the next turn
    - Click "New Combat" to reset round and turn counters
 
+6. **Save and Reuse Encounters**:
+   - Click "Save Encounter" to open a pop-up and store the current encounter as a named snapshot
+   - Click "Load Encounter" to restore a saved encounter as the active combat
+   - Use the same load pop-up to delete saved encounters you no longer need
+   - Saved encounters preserve combatants, initiative, current/max HP, temporary HP, conditions, and player visibility
+   - Loading an encounter replaces the current combat and resets turn/round tracking to the start
+
 ### Player View
 To display the standard player table view, add `?view=player` to the URL or click the Player View button:
 ```
@@ -176,6 +184,13 @@ Players will see:
 - No controls or hidden information
 
 **Tip**: Open the player view on a separate screen. Both views share the same localStorage, so changes update in real-time.
+
+### Encounter Snapshots
+The DM view includes dedicated pop-ups for saving and loading encounters, keeping the main control area compact while still making reusable setups quick to manage.
+
+| Save Encounter | Load Encounter |
+| --- | --- |
+| ![Save Encounter](docs/save-encounter.png) | ![Load Encounter](docs/load-encounter.png) |
 
 ### On-Deck View
 Use On-Deck mode when you want a cleaner presentation screen that only emphasizes the current turn and who is next:

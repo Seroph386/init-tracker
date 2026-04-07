@@ -82,6 +82,41 @@ watch([sessionId, () => window.location.search], () => {
 // Get game system setting
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
 
+type SavedEncounter = {
+  id: string
+  name: string
+  combatants: Combatant[]
+}
+
+const savedEncounters = useStorage<SavedEncounter[]>(
+  'savedEncounters',
+  [],
+  undefined,
+  {
+    serializer: {
+      read: (v: any) => {
+        if (!v) return []
+        const parsedItems = Array.isArray(v) ? v : JSON.parse(v)
+        return parsedItems.map((encounter: any) => ({
+          id: encounter.id,
+          name: encounter.name,
+          combatants: (encounter.combatants || []).map((combatant: any) => new Combatant(
+            combatant.name,
+            combatant.totalHP,
+            combatant.initiative,
+            combatant.currentHP,
+            (combatant.conditions || []).map((condition: any) => new Condition(condition.name, condition.value)),
+            combatant.visibility,
+            combatant.tempHP || 0,
+            combatant.maxTempHP || 0
+          ))
+        }))
+      },
+      write: (v: any) => JSON.stringify(v)
+    }
+  }
+)
+
 // Custom serializer for Combatant objects
 const combatantSerializer = {
   read: (v: any) => {
@@ -137,8 +172,44 @@ const docsDemoCombatants = [
   new Combatant('Vine Horror (Green)', 30, 16, 12, [new Condition('Grabbed', 1)], Visibility.Full, 4, 4)
 ]
 
+const docsDemoSavedEncounters: SavedEncounter[] = [
+  {
+    id: 'docs-encounter-1',
+    name: 'Abomination Vaults - Level 1',
+    combatants: [
+      new Combatant('Mite Tunnel Guard', 20, 21, 14, [new Condition('Frightened', 1)], Visibility.Half, 0, 0),
+      new Combatant('Mite Tunnel Guard (2)', 20, 18, 20, [], Visibility.Half, 0, 0),
+      new Combatant('Heroic Fighter', 42, 17, 31, [], Visibility.Full, 0, 0),
+      new Combatant('Skeletal Hound', 24, 14, 8, [new Condition('Enfeebled', 1)], Visibility.Full, 0, 0)
+    ]
+  },
+  {
+    id: 'docs-encounter-2',
+    name: 'Oozing Chapel Ambush',
+    combatants: [
+      new Combatant('Chapel Ooze', 55, 23, 55, [], Visibility.Half, 0, 0),
+      new Combatant('Acolyte of Dust', 26, 19, 20, [new Condition('Sickened', 1)], Visibility.Half, 0, 0),
+      new Combatant('Cleric of Sarenrae', 38, 16, 24, [], Visibility.Full, 0, 0)
+    ]
+  }
+]
+
 function initializeOfflineState() {
   if (docsDemo) {
+    savedEncounters.value = docsDemoSavedEncounters.map((encounter) => ({
+      id: encounter.id,
+      name: encounter.name,
+      combatants: encounter.combatants.map((combatant) => new Combatant(
+        combatant.name,
+        combatant.totalHP,
+        combatant.initiative,
+        combatant.currentHP,
+        combatant.conditions.map((condition) => new Condition(condition.name, condition.value)),
+        combatant.visibility,
+        combatant.tempHP || 0,
+        combatant.maxTempHP || 0
+      ))
+    }))
     _turn = ref(0)
     _round = ref(3)
     _combatants = ref(docsDemoCombatants)
@@ -425,6 +496,53 @@ function resetToDefaults(): void {
   combatants.value = getDefaultCombatants(gameSystem.value)
 }
 
+function saveEncounter(name: string): void {
+  const encounterId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  const snapshot = orderedCombatants.value.map((combatant: Combatant) => new Combatant(
+    combatant.name,
+    combatant.totalHP,
+    combatant.initiative,
+    combatant.currentHP,
+    combatant.conditions.map((condition: Condition) => new Condition(condition.name, condition.value)),
+    combatant.visibility,
+    combatant.tempHP || 0,
+    combatant.maxTempHP || 0
+  ))
+
+  savedEncounters.value = [
+    ...savedEncounters.value,
+    {
+      id: encounterId,
+      name,
+      combatants: snapshot
+    }
+  ]
+}
+
+function loadEncounter(encounterId: string): void {
+  const selected = savedEncounters.value.find((encounter) => encounter.id === encounterId)
+  if (!selected) {
+    return
+  }
+
+  combatants.value = selected.combatants.map((combatant) => new Combatant(
+    combatant.name,
+    combatant.totalHP,
+    combatant.initiative,
+    combatant.currentHP,
+    combatant.conditions.map((condition) => new Condition(condition.name, condition.value)),
+    combatant.visibility,
+    combatant.tempHP || 0,
+    combatant.maxTempHP || 0
+  ))
+  turn.value = 0
+  round.value = 1
+}
+
+function deleteEncounter(encounterId: string): void {
+  savedEncounters.value = savedEncounters.value.filter((encounter) => encounter.id !== encounterId)
+}
+
 </script>
 
 <template>
@@ -442,6 +560,7 @@ function resetToDefaults(): void {
       :onlineProvider="onlineProvider"
       :availableOnlineProviders="availableOnlineProviders"
       :isOnlineAvailable="isOnlineAvailable"
+      :savedEncounters="savedEncounters.map(encounter => ({ id: encounter.id, name: encounter.name }))"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
@@ -449,6 +568,9 @@ function resetToDefaults(): void {
       @removeCombatant="removeCombatant"
       @toggleOnlineMode="toggleOnlineMode"
       @setOnlineProvider="setOnlineProvider"
+      @saveEncounter="saveEncounter"
+      @loadEncounter="loadEncounter"
+      @deleteEncounter="deleteEncounter"
   />
 
   <PlayerSimpleView

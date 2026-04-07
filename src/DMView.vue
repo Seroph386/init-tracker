@@ -31,6 +31,9 @@ const emit = defineEmits<{
   (e: 'removeCombatant', index: number): void
   (e: 'toggleOnlineMode', value: boolean): void
   (e: 'setOnlineProvider', value: OnlineProvider): void
+  (e: 'saveEncounter', name: string): void
+  (e: 'loadEncounter', id: string): void
+  (e: 'deleteEncounter', id: string): void
 }>()
 
 const props = defineProps<{
@@ -42,13 +45,16 @@ const props = defineProps<{
   onlineProvider: OnlineProvider | '',
   availableOnlineProviders: OnlineProvider[],
   isOnlineAvailable: boolean,
+  savedEncounters: Array<{ id: string, name: string }>,
 }>()
 
 const copiedButton = ref<'player' | 'on-deck' | null>(null)
 let copiedMessageTimeout: ReturnType<typeof setTimeout> | null = null
 const showResetConfirm = ref(false)
 const isSettingsOpen = ref(false)
-const docsDemo = new URLSearchParams(window.location.search).get('docs-demo') === 'readme'
+const docsParams = new URLSearchParams(window.location.search)
+const docsDemo = docsParams.get('docs-demo') === 'readme'
+const docsPanel = docsParams.get('docs-panel')
 
 const newName = ref('')
 const newHP = ref(1)
@@ -57,6 +63,11 @@ const newVisibility = ref(Visibility.None)
 const newColor = ref<CombatantColorKey>('none')
 const newQuantity = ref(1)
 const isNewCombatantPopoverOpen = ref(false)
+const isSaveEncounterPopoverOpen = ref(false)
+const isLoadEncounterPopoverOpen = ref(false)
+const newEncounterName = ref('')
+const selectedEncounterId = ref('')
+const encounterError = ref('')
 const colorOptions = computed(() =>
   combatantColorKeys.map((colorKey) => ({
     value: colorKey,
@@ -66,6 +77,16 @@ const colorOptions = computed(() =>
 
 onMounted(() => {
   if (!docsDemo) {
+    return
+  }
+
+  if (docsPanel === 'save-encounter') {
+    isSaveEncounterPopoverOpen.value = true
+    return
+  }
+
+  if (docsPanel === 'load-encounter') {
+    isLoadEncounterPopoverOpen.value = true
     return
   }
 
@@ -90,6 +111,35 @@ watch(newName, (selectedName) => {
     newHP.value = monster.hp
   }
 })
+
+watch(isSaveEncounterPopoverOpen, (isOpen) => {
+  if (!isOpen) {
+    encounterError.value = ''
+    return
+  }
+
+  newEncounterName.value = docsDemo && docsPanel === 'save-encounter'
+    ? 'Abomination Vaults - Level 1'
+    : ''
+})
+
+watch(isLoadEncounterPopoverOpen, (isOpen) => {
+  if (!isOpen) {
+    return
+  }
+
+  if (!selectedEncounterId.value && props.savedEncounters.length > 0) {
+    selectedEncounterId.value = props.savedEncounters[0].id
+  }
+})
+
+watch(() => props.savedEncounters, (encounters) => {
+  if (encounters.some((encounter) => encounter.id === selectedEncounterId.value)) {
+    return
+  }
+
+  selectedEncounterId.value = encounters[0]?.id ?? ''
+}, { deep: true })
 
 function changeNewVisibility(): void {
   newVisibility.value++
@@ -131,6 +181,37 @@ function addCombatant(): void {
 
 function removeCombatant(index: number): void {
   emit('removeCombatant', index)
+}
+
+function saveEncounter(): void {
+  const trimmedName = newEncounterName.value.trim()
+  if (!trimmedName) {
+    encounterError.value = t.value.dm_actions.encounterRequired
+    return
+  }
+
+  emit('saveEncounter', trimmedName)
+  encounterError.value = ''
+  newEncounterName.value = ''
+  isSaveEncounterPopoverOpen.value = false
+}
+
+function loadEncounter(): void {
+  if (!selectedEncounterId.value) {
+    return
+  }
+
+  emit('loadEncounter', selectedEncounterId.value)
+  isLoadEncounterPopoverOpen.value = false
+}
+
+function deleteEncounter(): void {
+  if (!selectedEncounterId.value) {
+    return
+  }
+
+  emit('deleteEncounter', selectedEncounterId.value)
+  selectedEncounterId.value = ''
 }
 
 /**
@@ -215,101 +296,169 @@ async function copyOnDeckUrl(): Promise<void> {
       </article>
       <DMTable :combatants="combatants" :turn="turn" @removeCombatant="removeCombatant" class="shadow-md/50" />
       <div class="grid grid-cols-1 gap-4">
-      <div class="flex gap-4">
-        <button class="btn btn-neutral" @click="$emit('nextTurn')" :aria-label="t.dm_actions.next"><Icon icon="tabler:player-skip-forward" height="24" />{{t.dm_actions.next}}</button>
-        <button class="btn btn-error tooltip tooltip-bottom before:delay-200" :data-tip="t.dm_actions.resetTooltip" @click="$emit('reset')" :aria-label="t.dm_actions.reset"><Icon icon="tabler:refresh" height="24" />{{t.dm_actions.reset}}</button>
-        <a v-if="!isOnlineMode" class="btn btn-neutral" href="?view=player" :aria-label="t.dm_actions.playerView"><Icon icon="tabler:users-group" height="24" />{{t.dm_actions.playerView}}</a>
-        <button
-          v-else
-          class="btn btn-neutral relative"
-          @click="copyPlayerUrl"
-          :aria-label="t.dm_actions.copyPlayerUrl"
-        >
-          <Icon icon="tabler:users-group" height="24" />
-          {{t.dm_actions.copyPlayerUrl}}
-          <div v-if="copiedButton === 'player'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
-            {{t.dm_actions.copiedToClipboard}}
-          </div>
-        </button>
-        <a v-if="!isOnlineMode" class="btn btn-neutral" href="?view=on-deck" :aria-label="t.dm_actions.onDeckView"><Icon icon="tabler:presentation" height="24" />{{t.dm_actions.onDeckView}}</a>
-        <button
-          v-if="isOnlineMode"
-          class="btn btn-neutral relative"
-          @click="copyOnDeckUrl"
-          :aria-label="t.dm_actions.copyOnDeckUrl"
-        >
-         <Icon icon="tabler:presentation" height="24" />
-          {{t.dm_actions.copyOnDeckUrl}}
-          <div v-if="copiedButton === 'on-deck'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
-            {{ t.dm_actions.copiedToClipboard }}
-  </div>
-       </button>
+        <div class="flex flex-wrap gap-3">
+          <button class="btn btn-neutral w-full sm:w-auto" @click="$emit('nextTurn')" :aria-label="t.dm_actions.next"><Icon icon="tabler:player-skip-forward" height="24" />{{t.dm_actions.next}}</button>
+          <button class="btn btn-error tooltip tooltip-bottom before:delay-200 w-full sm:w-auto" :data-tip="t.dm_actions.resetTooltip" @click="$emit('reset')" :aria-label="t.dm_actions.reset"><Icon icon="tabler:refresh" height="24" />{{t.dm_actions.reset}}</button>
+          <a v-if="!isOnlineMode" class="btn btn-neutral w-full sm:w-auto" href="?view=player" :aria-label="t.dm_actions.playerView"><Icon icon="tabler:users-group" height="24" />{{t.dm_actions.playerView}}</a>
+          <button
+            v-else
+            class="btn btn-neutral relative w-full sm:w-auto"
+            @click="copyPlayerUrl"
+            :aria-label="t.dm_actions.copyPlayerUrl"
+          >
+            <Icon icon="tabler:users-group" height="24" />
+            {{t.dm_actions.copyPlayerUrl}}
+            <div v-if="copiedButton === 'player'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
+              {{t.dm_actions.copiedToClipboard}}
+            </div>
+          </button>
+          <a v-if="!isOnlineMode" class="btn btn-neutral w-full sm:w-auto" href="?view=on-deck" :aria-label="t.dm_actions.onDeckView"><Icon icon="tabler:presentation" height="24" />{{t.dm_actions.onDeckView}}</a>
+          <button
+            v-if="isOnlineMode"
+            class="btn btn-neutral relative w-full sm:w-auto"
+            @click="copyOnDeckUrl"
+            :aria-label="t.dm_actions.copyOnDeckUrl"
+          >
+            <Icon icon="tabler:presentation" height="24" />
+            {{t.dm_actions.copyOnDeckUrl}}
+            <div v-if="copiedButton === 'on-deck'" class="absolute -top-12 left-1/2 -translate-x-1/2 badge badge-success text-sm whitespace-nowrap">
+              {{ t.dm_actions.copiedToClipboard }}
+            </div>
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <button
+            class="btn btn-neutral w-full sm:w-auto"
+            :aria-label="t.options.settings"
+            @click="isSettingsOpen = true"
+          >
+            <Icon icon="tabler:settings" height="24" />
+            {{t.options.settings}}
+          </button>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <PopoverRoot :open="isNewCombatantPopoverOpen" @update:open="value => isNewCombatantPopoverOpen = value">
+            <PopoverTrigger as-child>
+              <button class="btn btn-neutral w-full sm:w-auto" :aria-label="t.dm_actions.add"><Icon icon="tabler:plus" height="24" /> {{t.dm_actions.add}}</button>
+            </PopoverTrigger>
+            <PopoverPortal>
+              <PopoverContent class="card w-[calc(100vw-2rem)] max-w-md bg-base-300 card-md shadow-l" role="dialog" aria-label="Add new combatant">
+                <div class="card-body" @keydown.enter.prevent="addCombatant">
+                  <div class="grid grid-cols-3 items-center gap-4">
+                    <Label for="newName">{{t.table.name}}</Label>
+                    <input id="newName" tabindex="1" type="text" class="input col-span-2 h-8" list="monsters" v-model="newName" aria-label="Combatant name" />
+                    <datalist id="monsters">
+                      <option v-for="monster in monsterList" :key="monster.name">{{monster.name}}</option>
+                    </datalist>
+                  </div>
+                  <div class="grid grid-cols-3 items-center gap-4">
+                    <Label for="newHP">{{t.table.hp}}</Label>
+                    <NumberFieldRoot :min="1" v-model="newHP" class="col-span-2">
+                      <NumberFieldInput tabindex="2" id="newHP" class="input h-8" />
+                    </NumberFieldRoot>
+                  </div>
+                  <div class="grid grid-cols-3 items-center gap-4">
+                    <Label for="newInitiative">{{t.table.initiative}}</Label>
+                    <NumberFieldRoot :min="1" v-model="newInitiative" class="col-span-2">
+                      <NumberFieldInput tabindex="3" id="newInitiative" class="input h-8" />
+                    </NumberFieldRoot>
+                  </div>
+                  <div class="grid grid-cols-3 items-center gap-4">
+                    <Label for="newColor">{{t.dm_actions.color}}</Label>
+                    <select id="newColor" tabindex="4" v-model="newColor" class="select select-bordered col-span-2 h-8 min-h-8">
+                      <option v-for="option in colorOptions" :key="option.value" :value="option.value">{{option.label}}</option>
+                    </select>
+                  </div>
+                  <div class="grid grid-cols-3 items-center gap-4">
+                    <Label for="newQuantity">{{t.dm_actions.quantity}}</Label>
+                    <NumberFieldRoot :min="1" v-model="newQuantity" class="col-span-2">
+                      <NumberFieldInput tabindex="5" id="newQuantity" class="input h-8" />
+                    </NumberFieldRoot>
+                  </div>
+                  <div class="flex justify-end gap-2">
+                    <button @click="changeNewVisibility" tabindex="6" class="btn btn-neutral btn-sm">
+                      <Icon v-if="newVisibility === Visibility.Full" icon="tabler:eye" height="24" />
+                      <Icon v-else-if="newVisibility === Visibility.Half" icon="tabler:eye-off" height="24" />
+                      <Icon v-else-if="newVisibility === Visibility.None" icon="tabler:eye-closed" height="24" />
+                    </button>
+                    <button @click="clearNewCombatant" tabindex="7" class="btn btn-error btn-sm"><Icon icon="tabler:eraser" height="24" />{{t.dm_actions.clear}}</button>
+                    <button @click="addCombatant" tabindex="8" class="btn btn-neutral btn-sm"><Icon icon="tabler:plus" height="24" />{{t.dm_actions.add}}</button>
+                  </div>
+                </div>
+                <PopoverArrow class="fill-base-300" />
+              </PopoverContent>
+            </PopoverPortal>
+          </PopoverRoot>
+          <PopoverRoot :open="isSaveEncounterPopoverOpen" @update:open="value => isSaveEncounterPopoverOpen = value">
+            <PopoverTrigger as-child>
+              <button class="btn btn-neutral w-full sm:w-auto" :aria-label="t.dm_actions.saveEncounter">
+                <Icon icon="tabler:device-floppy" height="24" />
+                {{ t.dm_actions.saveEncounter }}
+              </button>
+            </PopoverTrigger>
+            <PopoverPortal>
+              <PopoverContent class="card w-[calc(100vw-2rem)] max-w-sm bg-base-300 card-md shadow-l" role="dialog" :aria-label="t.dm_actions.saveEncounter">
+                <div class="card-body gap-3" @keydown.enter.prevent="saveEncounter">
+                  <label class="form-control">
+                    <span class="label-text">{{ t.dm_actions.encounterName }}</span>
+                    <input
+                      v-model="newEncounterName"
+                      type="text"
+                      class="input input-bordered w-full"
+                      :placeholder="t.dm_actions.encounterName"
+                    />
+                  </label>
+                  <p v-if="encounterError" class="text-error text-sm">{{ encounterError }}</p>
+                  <div class="flex flex-wrap justify-end gap-2">
+                    <button class="btn btn-neutral w-full sm:w-auto" @click="saveEncounter">
+                      <Icon icon="tabler:device-floppy" height="20" />
+                      {{ t.dm_actions.saveEncounter }}
+                    </button>
+                  </div>
+                </div>
+                <PopoverArrow class="fill-base-300" />
+              </PopoverContent>
+            </PopoverPortal>
+          </PopoverRoot>
+          <PopoverRoot :open="isLoadEncounterPopoverOpen" @update:open="value => isLoadEncounterPopoverOpen = value">
+            <PopoverTrigger as-child>
+              <button class="btn btn-neutral w-full sm:w-auto" :aria-label="t.dm_actions.loadEncounter">
+                <Icon icon="tabler:upload" height="24" />
+                {{ t.dm_actions.loadEncounter }}
+              </button>
+            </PopoverTrigger>
+            <PopoverPortal>
+              <PopoverContent class="card w-[calc(100vw-2rem)] max-w-sm bg-base-300 card-md shadow-l" role="dialog" :aria-label="t.dm_actions.savedEncounters">
+                <div class="card-body gap-3" @keydown.enter.prevent="loadEncounter">
+                  <label v-if="savedEncounters.length > 0" class="form-control">
+                    <span class="label-text">{{ t.dm_actions.savedEncounters }}</span>
+                    <select v-model="selectedEncounterId" class="select select-bordered w-full">
+                      <option value="" disabled>{{ t.dm_actions.savedEncounters }}</option>
+                      <option v-for="encounter in savedEncounters" :key="encounter.id" :value="encounter.id">
+                        {{ encounter.name }}
+                      </option>
+                    </select>
+                  </label>
+                  <p v-else class="text-sm opacity-75">
+                    {{ t.dm_actions.noSavedEncounters }}
+                  </p>
+                  <div v-if="savedEncounters.length > 0" class="flex flex-wrap justify-end gap-2">
+                    <button class="btn btn-error w-full sm:w-auto" :disabled="!selectedEncounterId" @click="deleteEncounter">
+                      <Icon icon="tabler:trash" height="20" />
+                      {{ t.dm_actions.deleteEncounter }}
+                    </button>
+                    <button class="btn btn-primary w-full sm:w-auto" :disabled="!selectedEncounterId" @click="loadEncounter">
+                      <Icon icon="tabler:upload" height="20" />
+                      {{ t.dm_actions.loadEncounter }}
+                    </button>
+                  </div>
+                </div>
+                <PopoverArrow class="fill-base-300" />
+              </PopoverContent>
+            </PopoverPortal>
+          </PopoverRoot>
+        </div>
       </div>
-      <div class="flex gap-4">
-        <button
-          class="btn btn-neutral"
-          :aria-label="t.options.settings"
-          @click="isSettingsOpen = true"
-        >
-          <Icon icon="tabler:settings" height="24" />
-          {{t.options.settings}}
-        </button>
-      </div>
-      <div class="flex gap-4">
-        <PopoverRoot :open="isNewCombatantPopoverOpen" @update:open="value => isNewCombatantPopoverOpen = value">
-          <PopoverTrigger as-child>
-            <button class="btn btn-neutral" :aria-label="t.dm_actions.add"><Icon icon="tabler:plus" height="24" /> {{t.dm_actions.add}}</button>
-          </PopoverTrigger>
-          <PopoverPortal>
-            <PopoverContent class="card w-96 bg-base-300 card-md shadow-l" role="dialog" aria-label="Add new combatant">
-              <div class="card-body" @keydown.enter.prevent="addCombatant">
-                <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newName">{{t.table.name}}</Label>
-                  <input id="newName" tabindex="1" type="text" class="input col-span-2 h-8" list="monsters" v-model="newName" aria-label="Combatant name" />
-                  <datalist id="monsters">
-                    <option v-for="monster in monsterList" :key="monster.name">{{monster.name}}</option>
-                  </datalist>
-                </div>
-                <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newHP">{{t.table.hp}}</Label>
-                  <NumberFieldRoot :min="1" v-model="newHP" class="col-span-2">
-                    <NumberFieldInput tabindex="2" id="newHP" class="input h-8" />
-                  </NumberFieldRoot>
-                </div>
-                <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newInitiative">{{t.table.initiative}}</Label>
-                  <NumberFieldRoot :min="1" v-model="newInitiative" class="col-span-2">
-                    <NumberFieldInput tabindex="3" id="newInitiative" class="input h-8" />
-                  </NumberFieldRoot>
-                </div>
-                <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newColor">{{t.dm_actions.color}}</Label>
-                  <select id="newColor" tabindex="4" v-model="newColor" class="select select-bordered col-span-2 h-8 min-h-8">
-                    <option v-for="option in colorOptions" :key="option.value" :value="option.value">{{option.label}}</option>
-                  </select>
-                </div>
-                <div class="grid grid-cols-3 items-center gap-4">
-                  <Label for="newQuantity">{{t.dm_actions.quantity}}</Label>
-                  <NumberFieldRoot :min="1" v-model="newQuantity" class="col-span-2">
-                    <NumberFieldInput tabindex="5" id="newQuantity" class="input h-8" />
-                  </NumberFieldRoot>
-                </div>
-                <div class="flex justify-end gap-2">
-                  <button @click="changeNewVisibility" tabindex="6" class="btn btn-neutral btn-sm">
-                    <Icon v-if="newVisibility === Visibility.Full" icon="tabler:eye" height="24" />
-                    <Icon v-else-if="newVisibility === Visibility.Half" icon="tabler:eye-off" height="24" />
-                    <Icon v-else-if="newVisibility === Visibility.None" icon="tabler:eye-closed" height="24" />
-                  </button>
-                  <button @click="clearNewCombatant" tabindex="7" class="btn btn-error btn-sm"><Icon icon="tabler:eraser" height="24" />{{t.dm_actions.clear}}</button>
-                  <button @click="addCombatant" tabindex="8" class="btn btn-neutral btn-sm"><Icon icon="tabler:plus" height="24" />{{t.dm_actions.add}}</button>
-                </div>
-              </div>
-              <PopoverArrow class="fill-base-300" />
-            </PopoverContent>
-          </PopoverPortal>
-        </PopoverRoot>
-      </div>
-    </div>
     </div>
 
     <!-- Reset Confirmation Dialog -->
