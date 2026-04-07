@@ -142,7 +142,7 @@ final class DMCapture: NSObject, WKNavigationDelegate {
 final class ScreenshotCoordinator {
     private let baseURL = URL(string: "http://127.0.0.1:4173/init-tracker/")!
     private let docsDirectory: URL
-    private let dataStore = WKWebsiteDataStore.default()
+    private let dataStore = WKWebsiteDataStore.nonPersistent()
     private let splitSize = CGSize(width: 1600, height: 900)
     private let onDeckSize = CGSize(width: 1600, height: 900)
     private let finish: (Result<Void, Error>) -> Void
@@ -214,6 +214,58 @@ final class ScreenshotCoordinator {
             case .success(let image):
                 do {
                     try self.write(image: image, to: self.docsDirectory.appendingPathComponent("on-deck-view.png"))
+                    self.captureSaveEncounter()
+                } catch {
+                    self.finish(.failure(error))
+                }
+            case .failure(let error):
+                self.finish(.failure(error))
+            }
+        }
+
+        capture.start()
+        retain(capture)
+    }
+
+    private func captureSaveEncounter() {
+        let capture = PageCapture(
+            url: baseURL.appending(queryItems: [
+                URLQueryItem(name: "docs-demo", value: "readme"),
+                URLQueryItem(name: "docs-panel", value: "save-encounter")
+            ]),
+            size: splitSize,
+            dataStore: dataStore
+        ) { result in
+            switch result {
+            case .success(let image):
+                do {
+                    try self.write(image: image, to: self.docsDirectory.appendingPathComponent("save-encounter.png"))
+                    self.captureLoadEncounter()
+                } catch {
+                    self.finish(.failure(error))
+                }
+            case .failure(let error):
+                self.finish(.failure(error))
+            }
+        }
+
+        capture.start()
+        retain(capture)
+    }
+
+    private func captureLoadEncounter() {
+        let capture = PageCapture(
+            url: baseURL.appending(queryItems: [
+                URLQueryItem(name: "docs-demo", value: "readme"),
+                URLQueryItem(name: "docs-panel", value: "load-encounter")
+            ]),
+            size: splitSize,
+            dataStore: dataStore
+        ) { result in
+            switch result {
+            case .success(let image):
+                do {
+                    try self.write(image: image, to: self.docsDirectory.appendingPathComponent("load-encounter.png"))
                     self.finish(.success(()))
                 } catch {
                     self.finish(.failure(error))
@@ -262,7 +314,7 @@ DispatchQueue.main.async {
     let coordinator = ScreenshotCoordinator(docsDirectory: docsDirectory) { result in
         switch result {
         case .success:
-            print("Saved docs/dm-view.png, docs/player-view.png, and docs/on-deck-view.png")
+            print("Saved docs/dm-view.png, docs/player-view.png, docs/on-deck-view.png, docs/save-encounter.png, and docs/load-encounter.png")
         case .failure(let error):
             fputs("Failed to generate screenshots: \(error)\n", stderr)
             exitCode = 1

@@ -128,12 +128,14 @@ Keep the visual showcase near the top of `README.md` up to date with the latest 
    ```bash
    pnpm docs:screenshots
    ```
-3. Commit the updated `docs/dm-view.png`, `docs/player-view.png`, and `docs/on-deck-view.png`
+3. Commit the updated `docs/dm-view.png`, `docs/player-view.png`, `docs/on-deck-view.png`, `docs/save-encounter.png`, and `docs/load-encounter.png`
 
 **Option B - Manual Screenshots:**
 1. Open the DM view and capture it as `docs/dm-view.png`
 2. Open the player view (`?view=player`) and capture it as `docs/player-view.png`
 3. Open the on-deck view (`?view=on-deck`) and capture it as `docs/on-deck-view.png`
+4. Open the save encounter pop-up and capture it as `docs/save-encounter.png`
+5. Open the load encounter pop-up and capture it as `docs/load-encounter.png`
 
 **Option C - Animated Demo:**
 1. Install screen recording tool:

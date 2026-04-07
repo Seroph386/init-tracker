@@ -172,8 +172,44 @@ const docsDemoCombatants = [
   new Combatant('Vine Horror (Green)', 30, 16, 12, [new Condition('Grabbed', 1)], Visibility.Full, 4, 4)
 ]
 
+const docsDemoSavedEncounters: SavedEncounter[] = [
+  {
+    id: 'docs-encounter-1',
+    name: 'Abomination Vaults - Level 1',
+    combatants: [
+      new Combatant('Mite Tunnel Guard', 20, 21, 14, [new Condition('Frightened', 1)], Visibility.Half, 0, 0),
+      new Combatant('Mite Tunnel Guard (2)', 20, 18, 20, [], Visibility.Half, 0, 0),
+      new Combatant('Heroic Fighter', 42, 17, 31, [], Visibility.Full, 0, 0),
+      new Combatant('Skeletal Hound', 24, 14, 8, [new Condition('Enfeebled', 1)], Visibility.Full, 0, 0)
+    ]
+  },
+  {
+    id: 'docs-encounter-2',
+    name: 'Oozing Chapel Ambush',
+    combatants: [
+      new Combatant('Chapel Ooze', 55, 23, 55, [], Visibility.Half, 0, 0),
+      new Combatant('Acolyte of Dust', 26, 19, 20, [new Condition('Sickened', 1)], Visibility.Half, 0, 0),
+      new Combatant('Cleric of Sarenrae', 38, 16, 24, [], Visibility.Full, 0, 0)
+    ]
+  }
+]
+
 function initializeOfflineState() {
   if (docsDemo) {
+    savedEncounters.value = docsDemoSavedEncounters.map((encounter) => ({
+      id: encounter.id,
+      name: encounter.name,
+      combatants: encounter.combatants.map((combatant) => new Combatant(
+        combatant.name,
+        combatant.totalHP,
+        combatant.initiative,
+        combatant.currentHP,
+        combatant.conditions.map((condition) => new Condition(condition.name, condition.value)),
+        combatant.visibility,
+        combatant.tempHP || 0,
+        combatant.maxTempHP || 0
+      ))
+    }))
     _turn = ref(0)
     _round = ref(3)
     _combatants = ref(docsDemoCombatants)
