@@ -7,6 +7,7 @@ import PlayerView from "./PlayerView.vue";
 import PlayerSimpleView from "./PlayerSimpleView.vue";
 import type {GameSystem} from "./db.ts";
 import {generateSessionId} from "./firebase.ts";
+import { signInWithGithub, signInWithGoogle, signOutGM, useFirebaseCurrentUser, useFirebaseSync } from "./firebase.ts";
 import {
   getConfiguredOnlineProviders,
   getDefaultOnlineProvider,
@@ -88,7 +89,7 @@ type SavedEncounter = {
   combatants: Combatant[]
 }
 
-const savedEncounters = useStorage<SavedEncounter[]>(
+const localSavedEncounters = useStorage<SavedEncounter[]>(
   'savedEncounters',
   [],
   undefined,
@@ -116,6 +117,69 @@ const savedEncounters = useStorage<SavedEncounter[]>(
     }
   }
 )
+const firebaseUser = useFirebaseCurrentUser()
+const cloudSavedEncounters = ref<SavedEncounter[] | null>(null)
+let stopCloudSavedEncountersWatch: (() => void) | null = null
+let cloudSavedEncountersSyncRef: ReturnType<typeof useFirebaseSync<SavedEncounter[]>> | null = null
+
+watch(firebaseUser, (user) => {
+  if (stopCloudSavedEncountersWatch) {
+    stopCloudSavedEncountersWatch()
+    stopCloudSavedEncountersWatch = null
+  }
+
+  if (!user || !isFirebaseReady()) {
+    cloudSavedEncounters.value = null
+    cloudSavedEncountersSyncRef = null
+    return
+  }
+
+  cloudSavedEncountersSyncRef = useFirebaseSync<SavedEncounter[]>(
+    `users/${user.uid}/savedEncounters`,
+    [],
+    {
+      read: (v: any) => {
+        if (!v) return []
+        const parsedItems = Array.isArray(v) ? v : Object.values(v)
+        return parsedItems.map((encounter: any) => ({
+          id: encounter.id,
+          name: encounter.name,
+          combatants: (encounter.combatants || []).map((combatant: any) => new Combatant(
+            combatant.name,
+            combatant.totalHP,
+            combatant.initiative,
+            combatant.currentHP,
+            (combatant.conditions || []).map((condition: any) => new Condition(condition.name, condition.value)),
+            combatant.visibility,
+            combatant.tempHP || 0,
+            combatant.maxTempHP || 0
+          ))
+        }))
+      },
+      write: (v: SavedEncounter[]) => v
+    }
+  )
+
+  stopCloudSavedEncountersWatch = watch(
+    cloudSavedEncountersSyncRef,
+    (value) => {
+      cloudSavedEncounters.value = value
+    },
+    { deep: true, immediate: true }
+  )
+}, { immediate: true })
+
+const savedEncounters = computed<SavedEncounter[]>({
+  get: () => cloudSavedEncounters.value ?? localSavedEncounters.value,
+  set: (v) => {
+    if (firebaseUser.value && cloudSavedEncountersSyncRef) {
+      cloudSavedEncountersSyncRef.value = v
+      cloudSavedEncounters.value = v
+      return
+    }
+    localSavedEncounters.value = v
+  }
+})
 
 // Custom serializer for Combatant objects
 const combatantSerializer = {
@@ -196,7 +260,7 @@ const docsDemoSavedEncounters: SavedEncounter[] = [
 
 function initializeOfflineState() {
   if (docsDemo) {
-    savedEncounters.value = docsDemoSavedEncounters.map((encounter) => ({
+    localSavedEncounters.value = docsDemoSavedEncounters.map((encounter) => ({
       id: encounter.id,
       name: encounter.name,
       combatants: encounter.combatants.map((combatant) => new Combatant(
@@ -543,6 +607,30 @@ function deleteEncounter(encounterId: string): void {
   savedEncounters.value = savedEncounters.value.filter((encounter) => encounter.id !== encounterId)
 }
 
+async function handleSignInWithGoogle(): Promise<void> {
+  try {
+    await signInWithGoogle()
+  } catch (error) {
+    console.error('Google sign-in failed:', error)
+  }
+}
+
+async function handleSignInWithGithub(): Promise<void> {
+  try {
+    await signInWithGithub()
+  } catch (error) {
+    console.error('GitHub sign-in failed:', error)
+  }
+}
+
+async function handleSignOutGM(): Promise<void> {
+  try {
+    await signOutGM()
+  } catch (error) {
+    console.error('Sign-out failed:', error)
+  }
+}
+
 </script>
 
 <template>
@@ -561,6 +649,8 @@ function deleteEncounter(encounterId: string): void {
       :availableOnlineProviders="availableOnlineProviders"
       :isOnlineAvailable="isOnlineAvailable"
       :savedEncounters="savedEncounters.map(encounter => ({ id: encounter.id, name: encounter.name }))"
+      :gmUserEmail="firebaseUser?.email || ''"
+      :isGMLoggedIn="!!firebaseUser"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
@@ -571,6 +661,9 @@ function deleteEncounter(encounterId: string): void {
       @saveEncounter="saveEncounter"
       @loadEncounter="loadEncounter"
       @deleteEncounter="deleteEncounter"
+      @signInWithGoogle="handleSignInWithGoogle"
+      @signInWithGithub="handleSignInWithGithub"
+      @signOutGM="handleSignOutGM"
   />
 
   <PlayerSimpleView

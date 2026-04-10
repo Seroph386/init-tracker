@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { colorIsDark, Combatant, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility } from "./functions.ts";
+import { Combatant, getConditionTextClass, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility } from "./functions.ts";
 import { useTranslations } from "./lang.ts";
 
 const { t } = useTranslations();
@@ -34,15 +34,13 @@ function formatConditionLabel(name: string, value: number): string {
 
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center gap-12 px-8 text-center">
-    <article class="prose">
-      <h3>{{ t.table.round }} {{ round }}</h3>
-    </article>
+    <h3 class="text-2xl font-semibold text-base-content">{{ t.table.round }} {{ round }}</h3>
 
     <div class="w-full max-w-5xl flex flex-col gap-10">
       <div class="card bg-base-200 shadow-xl">
         <div class="card-body items-center text-center">
           <h2 class="card-title text-2xl md:text-3xl opacity-70">
-            Current Turn
+            {{ t.table.currentTurn }}
           </h2>
           <div
             class="text-5xl md:text-7xl font-bold break-words transition-colors"
@@ -57,9 +55,7 @@ function formatConditionLabel(name: string, value: number): string {
             <span
               v-for="condition in currentCombatant.conditions"
               :key="`${currentCombatant.name}-${condition.name}`"
-              :class="['badge badge-lg md:badge-xl px-4 py-3', {
-                'text-accent-content': !colorIsDark(condition.color),
-              }]"
+              :class="['badge badge-lg md:badge-xl px-4 py-3', getConditionTextClass(condition.color)]"
               :style="{ backgroundColor: condition.color }"
             >
               {{ formatConditionLabel(condition.name, condition.value) }}
@@ -71,7 +67,7 @@ function formatConditionLabel(name: string, value: number): string {
       <div class="card bg-base-100 shadow-xl border border-base-300">
         <div class="card-body items-center text-center">
           <h2 class="card-title text-xl md:text-2xl opacity-70">
-            On Deck
+            {{ t.dm_actions.onDeckView }}
           </h2>
           <div
             class="text-4xl md:text-6xl font-semibold break-words transition-colors"
@@ -86,9 +82,7 @@ function formatConditionLabel(name: string, value: number): string {
             <span
               v-for="condition in nextCombatant.conditions"
               :key="`${nextCombatant.name}-${condition.name}`"
-              :class="['badge badge-lg px-4 py-3', {
-                'text-accent-content': !colorIsDark(condition.color),
-              }]"
+              :class="['badge badge-lg px-4 py-3', getConditionTextClass(condition.color)]"
               :style="{ backgroundColor: condition.color }"
             >
               {{ formatConditionLabel(condition.name, condition.value) }}
