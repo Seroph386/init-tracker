@@ -1,11 +1,23 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app'
 import { getDatabase, type Database, ref, onValue, set, off } from 'firebase/database'
+import {
+  getAuth,
+  type Auth,
+  type User,
+  GithubAuthProvider,
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut
+} from 'firebase/auth'
 import { type Ref, ref as vueRef, watch, getCurrentInstance, onBeforeUnmount } from 'vue'
 
 // Firebase configuration - will be set by user
 let firebaseApp: FirebaseApp | null = null
 let database: Database | null = null
+let auth: Auth | null = null
 let initPromise: Promise<void> | null = null
+const currentUser = vueRef<User | null>(null)
 
 /**
  * Initialize Firebase with user's configuration
@@ -16,6 +28,10 @@ export function initializeFirebase(config: object) {
     initPromise = Promise.resolve().then(() => {
       firebaseApp = initializeApp(config)
       database = getDatabase(firebaseApp)
+      auth = getAuth(firebaseApp)
+      onAuthStateChanged(auth, (user) => {
+        currentUser.value = user
+      })
     })
   }
   return initPromise
@@ -25,7 +41,26 @@ export function initializeFirebase(config: object) {
  * Check if Firebase is initialized and ready to use
  */
 export function isFirebaseReady(): boolean {
-  return firebaseApp !== null && database !== null
+  return firebaseApp !== null && database !== null && auth !== null
+}
+
+export function useFirebaseCurrentUser(): Ref<User | null> {
+  return currentUser
+}
+
+export async function signInWithGoogle(): Promise<void> {
+  if (!auth) throw new Error('Firebase auth is not initialized.')
+  await signInWithPopup(auth, new GoogleAuthProvider())
+}
+
+export async function signInWithGithub(): Promise<void> {
+  if (!auth) throw new Error('Firebase auth is not initialized.')
+  await signInWithPopup(auth, new GithubAuthProvider())
+}
+
+export async function signOutGM(): Promise<void> {
+  if (!auth) throw new Error('Firebase auth is not initialized.')
+  await signOut(auth)
 }
 
 /**

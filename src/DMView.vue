@@ -34,6 +34,10 @@ const emit = defineEmits<{
   (e: 'saveEncounter', name: string): void
   (e: 'loadEncounter', id: string): void
   (e: 'deleteEncounter', id: string): void
+  (e: 'signInWithGoogle'): void
+  (e: 'signInWithGithub'): void
+  (e: 'signInLocalGM'): void
+  (e: 'signOutGM'): void
 }>()
 
 const props = defineProps<{
@@ -46,6 +50,8 @@ const props = defineProps<{
   availableOnlineProviders: OnlineProvider[],
   isOnlineAvailable: boolean,
   savedEncounters: Array<{ id: string, name: string }>,
+  isGMLoggedIn: boolean,
+  gmUserEmail: string,
 }>()
 
 const copiedButton = ref<'player' | 'on-deck' | null>(null)
@@ -184,6 +190,11 @@ function removeCombatant(index: number): void {
 }
 
 function saveEncounter(): void {
+  if (!props.isGMLoggedIn) {
+    encounterError.value = t.value.dm_actions.signInRequiredForCloudSaves
+    return
+  }
+
   const trimmedName = newEncounterName.value.trim()
   if (!trimmedName) {
     encounterError.value = t.value.dm_actions.encounterRequired
@@ -212,6 +223,22 @@ function deleteEncounter(): void {
 
   emit('deleteEncounter', selectedEncounterId.value)
   selectedEncounterId.value = ''
+}
+
+function signInWithGoogle(): void {
+  emit('signInWithGoogle')
+}
+
+function signInWithGithub(): void {
+  emit('signInWithGithub')
+}
+
+function signInLocalGM(): void {
+  emit('signInLocalGM')
+}
+
+function signOutGMUser(): void {
+  emit('signOutGM')
 }
 
 /**
@@ -337,6 +364,27 @@ async function copyOnDeckUrl(): Promise<void> {
           </button>
         </div>
         <div class="flex flex-wrap gap-3">
+          <div v-if="availableOnlineProviders.includes('firebase')" class="flex flex-wrap items-center gap-2 w-full">
+            <span v-if="isGMLoggedIn" class="badge badge-success px-3 py-4">
+              {{ t.dm_actions.loggedInAs }} {{ gmUserEmail }}
+            </span>
+            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInWithGoogle">
+              <Icon icon="tabler:brand-google" height="20" />
+              {{ t.dm_actions.signInGoogle }}
+            </button>
+            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInWithGithub">
+              <Icon icon="tabler:brand-github" height="20" />
+              {{ t.dm_actions.signInGithub }}
+            </button>
+            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInLocalGM">
+              <Icon icon="tabler:user" height="20" />
+              {{ t.dm_actions.signInLocal }}
+            </button>
+            <button v-if="isGMLoggedIn" class="btn btn-outline btn-sm" @click="signOutGMUser">
+              <Icon icon="tabler:logout" height="20" />
+              {{ t.dm_actions.signOut }}
+            </button>
+          </div>
           <PopoverRoot :open="isNewCombatantPopoverOpen" @update:open="value => isNewCombatantPopoverOpen = value">
             <PopoverTrigger as-child>
               <button class="btn btn-neutral w-full sm:w-auto" :aria-label="t.dm_actions.add"><Icon icon="tabler:plus" height="24" /> {{t.dm_actions.add}}</button>
@@ -408,9 +456,12 @@ async function copyOnDeckUrl(): Promise<void> {
                       :placeholder="t.dm_actions.encounterName"
                     />
                   </label>
+                  <p v-if="!isGMLoggedIn" class="text-sm opacity-75">
+                    {{ t.dm_actions.signInRequiredForCloudSaves }}
+                  </p>
                   <p v-if="encounterError" class="text-error text-sm">{{ encounterError }}</p>
                   <div class="flex flex-wrap justify-end gap-2">
-                    <button class="btn btn-neutral w-full sm:w-auto" @click="saveEncounter">
+                    <button class="btn btn-neutral w-full sm:w-auto" :disabled="!isGMLoggedIn" @click="saveEncounter">
                       <Icon icon="tabler:device-floppy" height="20" />
                       {{ t.dm_actions.saveEncounter }}
                     </button>
