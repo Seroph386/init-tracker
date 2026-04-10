@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {colorIsDark, Combatant, getHpProgressClass, Visibility} from "./functions.ts";
+import {Combatant, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
 import {useConditions} from "./db.ts";
 import { Icon } from "@iconify/vue";
 import {ref} from "vue";
@@ -97,7 +97,7 @@ function hideConditionTooltip(): void {
             <template v-for="(condition) in combatant.conditions">
               <span
                   :class="['badge badge-lg m-0.5 select-none', {
-                    'text-accent-content': !colorIsDark(condition.color),
+                    [getConditionTextClass(condition.color)]: true,
                     'cursor-pointer': getConditionTooltip(condition.name),
                     'border-2 border-warning': getConditionTooltip(condition.name),
                   }]"

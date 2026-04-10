@@ -310,5 +310,9 @@ function colorIsDark(bgColor: string): boolean {
     return ((r * 0.299) + (g * 0.587) + (b * 0.114)) <= 100;
 }
 
-export {colorIsDark, combatantColorKeys, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+function getConditionTextClass(backgroundColor: string): string {
+    return colorIsDark(backgroundColor) ? "text-white" : "text-black"
+}
+
+export {colorIsDark, combatantColorKeys, formatCombatantName, getConditionTextClass, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
 export type { CombatantColorKey }

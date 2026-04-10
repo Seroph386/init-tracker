@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import {ref, computed} from "vue";
-import {colorIsDark, Combatant, getHpProgressClass, Visibility} from "./functions.ts";
+import {Combatant, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
 import { Icon } from "@iconify/vue";
 import {useStorage} from "@vueuse/core";
 import {
@@ -225,9 +225,7 @@ function removeCombatant(i: number): void {
           </PopoverRoot>
           <template v-for="(condition) in combatant.conditions">
             <span
-                :class="['badge badge-lg m-0.5 select-none', {
-                  'text-accent-content': !colorIsDark(condition.color)
-                }]"
+                :class="['badge badge-lg m-0.5 select-none', getConditionTextClass(condition.color)]"
                 :style="[{
                   backgroundColor: condition.color
                 }]"

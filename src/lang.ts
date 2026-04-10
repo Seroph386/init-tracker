@@ -6,6 +6,7 @@ type Locale = 'en' | 'pt_BR'
 type TranslationStructure = {
     table: {
         round: string,
+        currentTurn: string,
         name: string,
         hp: string,
         initiative: string,
@@ -26,6 +27,11 @@ type TranslationStructure = {
         copyPlayerUrl: string,
         copyOnDeckUrl: string,
         copiedToClipboard: string,
+        signInGoogle: string,
+        signInGithub: string,
+        signOut: string,
+        loggedInAs: string,
+        signInRequiredForCloudSaves: string,
         encounterName: string,
         saveEncounter: string,
         loadEncounter: string,
@@ -77,6 +83,7 @@ const translations: Record<Locale, TranslationStructure> = {
     en: {
         table: {
             round: "Round",
+            currentTurn: "Current Turn",
             name: "Name",
             hp: "HP",
             initiative: "Initiative",
@@ -97,6 +104,11 @@ const translations: Record<Locale, TranslationStructure> = {
             copyPlayerUrl: "Copy Player URL",
             copyOnDeckUrl: "Copy On-Deck URL",
             copiedToClipboard: "Copied to clipboard!",
+            signInGoogle: "Sign in with Google",
+            signInGithub: "Sign in with GitHub",
+            signOut: "Sign Out",
+            loggedInAs: "GM:",
+            signInRequiredForCloudSaves: "Sign in as a GM to save encounters to your account.",
             encounterName: "Encounter Name",
             saveEncounter: "Save Encounter",
             loadEncounter: "Load Encounter",
@@ -177,6 +189,7 @@ const translations: Record<Locale, TranslationStructure> = {
     pt_BR: {
         table: {
             round: "Rodada",
+            currentTurn: "Turno Atual",
             name: "Nome",
             hp: "PV",
             initiative: "Iniciativa",
@@ -197,6 +210,11 @@ const translations: Record<Locale, TranslationStructure> = {
             copyPlayerUrl: "Copiar URL dos Jogadores",
             copyOnDeckUrl: "Copiar URL On-Deck",
             copiedToClipboard: "Copiado!",
+            signInGoogle: "Entrar com Google",
+            signInGithub: "Entrar com GitHub",
+            signOut: "Sair",
+            loggedInAs: "GM:",
+            signInRequiredForCloudSaves: "Entre como GM para salvar encontros na sua conta.",
             encounterName: "Nome do Encontro",
             saveEncounter: "Salvar Encontro",
             loadEncounter: "Carregar Encontro",
