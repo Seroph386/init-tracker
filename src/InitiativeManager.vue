@@ -8,6 +8,8 @@ import PlayerSimpleView from "./PlayerSimpleView.vue";
 import type {GameSystem} from "./db.ts";
 import {generateSessionId} from "./firebase.ts";
 import { signInWithGithub, signInWithGoogle, signOutGM, useFirebaseCurrentUser, useFirebaseSync } from "./firebase.ts";
+import { signInLocalGM, signOutLocalGM, useLocalGMUser } from "./localAuth.ts";
+import { useTranslations } from "./lang.ts";
 import {
   getConfiguredOnlineProviders,
   getDefaultOnlineProvider,
@@ -82,6 +84,7 @@ watch([sessionId, () => window.location.search], () => {
 
 // Get game system setting
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
+const { t } = useTranslations()
 
 type SavedEncounter = {
   id: string
@@ -118,9 +121,11 @@ const localSavedEncounters = useStorage<SavedEncounter[]>(
   }
 )
 const firebaseUser = useFirebaseCurrentUser()
+const localGMUser = useLocalGMUser()
 const cloudSavedEncounters = ref<SavedEncounter[] | null>(null)
 let stopCloudSavedEncountersWatch: (() => void) | null = null
 let cloudSavedEncountersSyncRef: ReturnType<typeof useFirebaseSync<SavedEncounter[]>> | null = null
+const localAccountSavedEncounters = ref<SavedEncounter[] | null>(null)
 
 watch(firebaseUser, (user) => {
   if (stopCloudSavedEncountersWatch) {
@@ -170,16 +175,56 @@ watch(firebaseUser, (user) => {
 }, { immediate: true })
 
 const savedEncounters = computed<SavedEncounter[]>({
-  get: () => cloudSavedEncounters.value ?? localSavedEncounters.value,
+  get: () => cloudSavedEncounters.value ?? localAccountSavedEncounters.value ?? localSavedEncounters.value,
   set: (v) => {
     if (firebaseUser.value && cloudSavedEncountersSyncRef) {
       cloudSavedEncountersSyncRef.value = v
       cloudSavedEncounters.value = v
       return
     }
+
+    if (localGMUser.value) {
+      localAccountSavedEncounters.value = v
+      localStorage.setItem(`savedEncounters:local:${localGMUser.value.id}`, JSON.stringify(v))
+      return
+    }
+
     localSavedEncounters.value = v
   }
 })
+
+watch(localGMUser, (user) => {
+  if (!user) {
+    localAccountSavedEncounters.value = null
+    return
+  }
+
+  const stored = localStorage.getItem(`savedEncounters:local:${user.id}`)
+  if (!stored) {
+    localAccountSavedEncounters.value = []
+    return
+  }
+
+  try {
+    const parsedItems = JSON.parse(stored)
+    localAccountSavedEncounters.value = parsedItems.map((encounter: any) => ({
+      id: encounter.id,
+      name: encounter.name,
+      combatants: (encounter.combatants || []).map((combatant: any) => new Combatant(
+        combatant.name,
+        combatant.totalHP,
+        combatant.initiative,
+        combatant.currentHP,
+        (combatant.conditions || []).map((condition: any) => new Condition(condition.name, condition.value)),
+        combatant.visibility,
+        combatant.tempHP || 0,
+        combatant.maxTempHP || 0
+      ))
+    }))
+  } catch {
+    localAccountSavedEncounters.value = []
+  }
+}, { immediate: true })
 
 // Custom serializer for Combatant objects
 const combatantSerializer = {
@@ -624,10 +669,27 @@ async function handleSignInWithGithub(): Promise<void> {
 }
 
 async function handleSignOutGM(): Promise<void> {
+  signOutLocalGM()
+
   try {
     await signOutGM()
   } catch (error) {
-    console.error('Sign-out failed:', error)
+    if (firebaseUser.value) {
+      console.error('Sign-out failed:', error)
+    }
+  }
+}
+
+function handleSignInLocalGM(): void {
+  const name = window.prompt(t.value.dm_actions.localNamePrompt)
+  if (!name) return
+
+  const passphrase = window.prompt(t.value.dm_actions.localPassphrasePrompt)
+  if (!passphrase) return
+
+  const loggedIn = signInLocalGM(name, passphrase)
+  if (!loggedIn) {
+    console.error('Local sign-in failed: missing name or passphrase.')
   }
 }
 
@@ -649,8 +711,8 @@ async function handleSignOutGM(): Promise<void> {
       :availableOnlineProviders="availableOnlineProviders"
       :isOnlineAvailable="isOnlineAvailable"
       :savedEncounters="savedEncounters.map(encounter => ({ id: encounter.id, name: encounter.name }))"
-      :gmUserEmail="firebaseUser?.email || ''"
-      :isGMLoggedIn="!!firebaseUser"
+      :gmUserEmail="firebaseUser?.email || localGMUser?.displayName || ''"
+      :isGMLoggedIn="!!firebaseUser || !!localGMUser"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
@@ -663,6 +725,7 @@ async function handleSignOutGM(): Promise<void> {
       @deleteEncounter="deleteEncounter"
       @signInWithGoogle="handleSignInWithGoogle"
       @signInWithGithub="handleSignInWithGithub"
+      @signInLocalGM="handleSignInLocalGM"
       @signOutGM="handleSignOutGM"
   />
 

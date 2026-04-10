@@ -36,6 +36,7 @@ const emit = defineEmits<{
   (e: 'deleteEncounter', id: string): void
   (e: 'signInWithGoogle'): void
   (e: 'signInWithGithub'): void
+  (e: 'signInLocalGM'): void
   (e: 'signOutGM'): void
 }>()
 
@@ -232,6 +233,10 @@ function signInWithGithub(): void {
   emit('signInWithGithub')
 }
 
+function signInLocalGM(): void {
+  emit('signInLocalGM')
+}
+
 function signOutGMUser(): void {
   emit('signOutGM')
 }
@@ -370,6 +375,10 @@ async function copyOnDeckUrl(): Promise<void> {
             <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInWithGithub">
               <Icon icon="tabler:brand-github" height="20" />
               {{ t.dm_actions.signInGithub }}
+            </button>
+            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInLocalGM">
+              <Icon icon="tabler:user" height="20" />
+              {{ t.dm_actions.signInLocal }}
             </button>
             <button v-if="isGMLoggedIn" class="btn btn-outline btn-sm" @click="signOutGMUser">
               <Icon icon="tabler:logout" height="20" />
