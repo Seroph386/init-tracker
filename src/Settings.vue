@@ -27,6 +27,7 @@ const emit = defineEmits<{
 
 // Settings stored in localStorage
 const useTempHP = useStorage('useTempHP', true)
+const colorBlindMode = useStorage('colorBlindMode', false)
 const gameSystem = useStorage<GameSystem>('gameSystem', 'pathfinder')
 
 // Initialize enabled content sources using defaults from JSON files
@@ -124,6 +125,18 @@ function requestReset() {
                 v-model="useTempHP"
             />
             <span class="label-text">{{t.options.useTempHP}}</span>
+          </label>
+        </div>
+
+        <!-- Color Blind Friendly Conditions -->
+        <div class="flex items-center justify-between">
+          <label class="label cursor-pointer gap-2">
+            <input
+              type="checkbox"
+              class="toggle"
+              v-model="colorBlindMode"
+            />
+            <span class="label-text">{{t.options.colorBlindMode}}</span>
           </label>
         </div>
 

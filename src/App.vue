@@ -38,7 +38,7 @@ onMounted(() => {
   <div class="group fixed top-1 right-1 z-50">
     <PopoverRoot>
       <PopoverTrigger as-child>
-        <button class="btn btn-neutral invisible group-hover:visible">{{t.options.language}}</button>
+        <button class="btn btn-neutral top-control-btn">{{t.options.language}}</button>
       </PopoverTrigger>
         <PopoverContent>
           <div class="card bg-base-300 card-md shadow-l">
@@ -49,7 +49,7 @@ onMounted(() => {
       </PopoverRoot>
     <PopoverRoot>
       <PopoverTrigger as-child>
-        <button class="btn btn-neutral invisible group-hover:visible">{{t.options.theme}}
+        <button class="btn btn-neutral top-control-btn">{{t.options.theme}}
           <Icon icon="tabler:chevron-down" height="24"/>
         </button>
       </PopoverTrigger>
@@ -108,4 +108,17 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.top-control-btn {
+  visibility: visible;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .top-control-btn {
+    visibility: hidden;
+  }
+
+  .group:hover .top-control-btn {
+    visibility: visible;
+  }
+}
 </style>

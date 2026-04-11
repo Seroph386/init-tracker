@@ -54,6 +54,23 @@ class Condition {
         str.split('').forEach(char => {
             hash = char.charCodeAt(0) + ((hash << 5) - hash)
         })
+
+        const normalizedHash = Math.abs(hash)
+        const isColorBlindMode = typeof window !== 'undefined' && window.localStorage.getItem('colorBlindMode') === 'true'
+        if (isColorBlindMode) {
+            const colorBlindPalette = [
+                '#0072B2', // blue
+                '#E69F00', // orange
+                '#009E73', // bluish green
+                '#CC79A7', // reddish purple
+                '#56B4E9', // sky blue
+                '#D55E00', // vermillion
+                '#F0E442', // yellow
+                '#000000', // black
+            ]
+            return colorBlindPalette[normalizedHash % colorBlindPalette.length]
+        }
+
         let color = '#'
         for (let i = 0; i < 3; i++) {
             const value = (hash >> (i * 8)) & 0xff
