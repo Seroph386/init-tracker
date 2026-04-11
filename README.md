@@ -169,26 +169,35 @@ Run with:
 docker compose -f compose.sqlite.yml up -d
 ```
 
-#### Option B: Firebase image (`:latest-firebase`) + env file for compose vars
+#### Option B: Firebase runtime config via mounted file
 
-The publish workflow can also publish a Firebase-built image tag (`latest-firebase`, `sha-...-firebase`) when Firebase secrets are configured in GitHub Actions.
+Use the standard image and mount a `firebase.config.json` file at runtime. This keeps Firebase credentials out of the published container image and lets you self-host your own production deployment.
 
 `compose.firebase.yml`
 
 ```yaml
 services:
   init-tracker:
-    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest}
     ports:
       - "${INIT_TRACKER_PORT:-8787}:8787"
+    volumes:
+      - ${INIT_TRACKER_FIREBASE_CONFIG_PATH:-./deploy/firebase.config.json}:/app/dist/firebase.config.json:ro
     restart: unless-stopped
 ```
 
 `deploy/firebase-compose.env` (create from `deploy/firebase-compose.env.example`)
 
 ```dotenv
-INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest-firebase
+INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest
 INIT_TRACKER_PORT=8787
+INIT_TRACKER_FIREBASE_CONFIG_PATH=./deploy/firebase.config.json
+```
+
+Create your config file from the template:
+
+```bash
+cp deploy/firebase.config.json.example deploy/firebase.config.json
 ```
 
 Run with:

@@ -15,6 +15,16 @@ type CombatantSerializer<TCombatants> = {
   write: (value: TCombatants) => unknown
 }
 
+type FirebaseConfig = {
+  apiKey: string
+  authDomain: string
+  databaseURL: string
+  projectId: string
+  storageBucket: string
+  messagingSenderId: string
+  appId: string
+}
+
 const firebaseConfigModules = import.meta.glob('./firebase.config.ts')
 const firebaseConfigModulePath = Object.keys(firebaseConfigModules)[0]
 let firebaseInitPromise: Promise<void> | null = null
@@ -27,12 +37,40 @@ function getConfiguredSqliteSyncUrl(): string {
   return import.meta.env.VITE_SQLITE_SYNC_URL?.trim() ?? ''
 }
 
+function getConfiguredFirebaseConfigUrl(): string {
+  return import.meta.env.VITE_FIREBASE_CONFIG_URL?.trim() ?? ''
+}
+
+async function loadFirebaseConfig(): Promise<FirebaseConfig | null> {
+  const firebaseConfigUrl = getConfiguredFirebaseConfigUrl()
+
+  if (firebaseConfigUrl) {
+    const response = await fetch(firebaseConfigUrl, {
+      headers: { Accept: 'application/json' }
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to load Firebase config from ${firebaseConfigUrl}: ${response.status}`)
+    }
+
+    return await response.json() as FirebaseConfig
+  }
+
+  if (!firebaseConfigModulePath) {
+    return null
+  }
+
+  const loader = firebaseConfigModules[firebaseConfigModulePath] as () => Promise<{ firebaseConfig: FirebaseConfig }>
+  const module = await loader()
+  return module.firebaseConfig
+}
+
 export function normalizeOnlineProvider(value: string | null | undefined): OnlineProvider | '' {
   return value === 'firebase' || value === 'sqlite' ? value : ''
 }
 
 export function isFirebaseConfigured(): boolean {
-  return Boolean(firebaseConfigModulePath)
+  return Boolean(getConfiguredFirebaseConfigUrl() || firebaseConfigModulePath)
 }
 
 export function getSqliteSyncBaseUrl(): string {
@@ -77,14 +115,18 @@ export function getDefaultOnlineProvider(): OnlineProvider | '' {
 }
 
 export async function initializeConfiguredOnlineProviders(): Promise<void> {
-  if (!firebaseConfigModulePath) {
+  if (!isFirebaseConfigured()) {
     return
   }
 
   if (!firebaseInitPromise) {
-    const loader = firebaseConfigModules[firebaseConfigModulePath] as () => Promise<{ firebaseConfig: object }>
-    firebaseInitPromise = loader()
-      .then((module) => initializeFirebase(module.firebaseConfig))
+    firebaseInitPromise = loadFirebaseConfig()
+      .then((firebaseConfig) => {
+        if (!firebaseConfig) {
+          return
+        }
+        return initializeFirebase(firebaseConfig)
+      })
       .catch((error) => {
         firebaseInitPromise = null
         console.error('Failed to initialize Firebase:', error)
