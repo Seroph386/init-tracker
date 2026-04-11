@@ -98,29 +98,34 @@ SQLITE_SYNC_STATIC_BASE_PATH=/
 
 Run it with `docker compose -f compose.sqlite.yml up -d`.
 
-### Firebase published image + compose
+### Firebase runtime config + compose
 
-The publish workflow can also publish Firebase image tags (`latest-firebase`, `sha-...-firebase`) when Firebase secrets are configured in GitHub Actions.
+Use the standard image and mount a `firebase.config.json` file at runtime. This keeps Firebase credentials out of the published image.
 
 `compose.firebase.yml`
 
 ```yaml
 services:
   init-tracker:
-    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest}
     ports:
       - "${INIT_TRACKER_PORT:-8787}:8787"
+    volumes:
+      - ${INIT_TRACKER_FIREBASE_CONFIG_PATH:-./deploy/firebase.config.json}:/app/dist/firebase.config.json:ro
     restart: unless-stopped
 ```
 
 `deploy/firebase-compose.env` (create from `deploy/firebase-compose.env.example`)
 
 ```dotenv
-INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest-firebase
+INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest
 INIT_TRACKER_PORT=8787
+INIT_TRACKER_FIREBASE_CONFIG_PATH=./deploy/firebase.config.json
 ```
 
-Run it with `docker compose --env-file deploy/firebase-compose.env -f compose.firebase.yml up -d`.
+Create your config file from `deploy/firebase.config.json.example`, then run:
+
+`docker compose --env-file deploy/firebase-compose.env -f compose.firebase.yml up -d`.
 
 Useful commands:
 

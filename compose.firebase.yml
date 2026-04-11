@@ -1,6 +1,8 @@
 services:
   init-tracker:
-    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest}
     ports:
       - "${INIT_TRACKER_PORT:-8787}:8787"
+    volumes:
+      - ${INIT_TRACKER_FIREBASE_CONFIG_PATH:-./deploy/firebase.config.json}:/app/dist/firebase.config.json:ro
     restart: unless-stopped
