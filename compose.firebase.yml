@@ -1,0 +1,6 @@
+services:
+  init-tracker:
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    restart: unless-stopped

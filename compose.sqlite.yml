@@ -1,0 +1,13 @@
+services:
+  init-tracker:
+    image: ghcr.io/seroph386/init-tracker:latest
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    env_file:
+      - ./deploy/sqlite-runtime.env
+    volumes:
+      - init-tracker-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  init-tracker-data:
