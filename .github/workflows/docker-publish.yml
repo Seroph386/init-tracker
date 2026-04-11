@@ -2,7 +2,7 @@ name: Publish Docker Image
 
 on:
   push:
-    branches: [ prod ]
+    branches: [ main, prod ]
     tags:
       - 'v*'
   workflow_dispatch:
@@ -40,7 +40,7 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}
         tags: |
-          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/prod' }}
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod' }}
           type=ref,event=branch
           type=ref,event=tag
           type=semver,pattern={{version}}
@@ -66,7 +66,7 @@ jobs:
       with:
         images: ghcr.io/${{ github.repository }}
         tags: |
-          type=raw,value=latest-firebase,enable=${{ github.ref == 'refs/heads/prod' }}
+          type=raw,value=latest-firebase,enable=${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod' }}
           type=ref,event=branch,suffix=-firebase
           type=ref,event=tag,suffix=-firebase
           type=semver,pattern={{version}},suffix=-firebase
