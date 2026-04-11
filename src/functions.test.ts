@@ -2,6 +2,23 @@ import { describe, it, expect } from 'vitest'
 import { Combatant, Condition, Visibility, colorIsDark, formatCombatantName, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter } from './functions'
 
 describe('Condition', () => {
+  it('should use a colorblind-safe palette when enabled', () => {
+    localStorage.setItem('colorBlindMode', 'true')
+    const condition = new Condition('Frightened')
+    expect(condition.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    expect([
+      '#0072B2',
+      '#E69F00',
+      '#009E73',
+      '#CC79A7',
+      '#56B4E9',
+      '#D55E00',
+      '#F0E442',
+      '#000000',
+    ]).toContain(condition.color)
+    localStorage.removeItem('colorBlindMode')
+  })
+
   it('should create a condition with default value of 1', () => {
     const condition = new Condition('Frightened')
     expect(condition.name).toBe('Frightened')
