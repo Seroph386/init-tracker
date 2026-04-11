@@ -298,6 +298,20 @@ function getHpProgressClass(combatant: Pick<Combatant, "currentHP" | "totalHP">)
     }[getHpStatus(combatant)]
 }
 
+function getBloodDropCount(combatant: Pick<Combatant, "currentHP" | "totalHP">): number {
+    const hpStatus = getHpStatus(combatant)
+
+    if (hpStatus === "critical") {
+        return 2
+    }
+
+    if (hpStatus === "wounded") {
+        return 1
+    }
+
+    return 0
+}
+
 function getVisibleCombatantAtOrAfter<T extends Pick<Combatant, "visibility">>(
     combatants: T[],
     startIndex: number
@@ -331,5 +345,5 @@ function getConditionTextClass(backgroundColor: string): string {
     return colorIsDark(backgroundColor) ? "text-white" : "text-black"
 }
 
-export {colorIsDark, combatantColorKeys, formatCombatantName, getConditionTextClass, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
+export {colorIsDark, combatantColorKeys, formatCombatantName, getBloodDropCount, getConditionTextClass, getHpProgressClass, getHpRatio, getHpStatus, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility, Condition, Combatant, defaultCombatants, getDefaultCombatants}
 export type { CombatantColorKey }
