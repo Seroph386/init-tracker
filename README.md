@@ -125,7 +125,50 @@ docker pull ghcr.io/seroph386/init-tracker:latest
 docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
+Published images are now built for both `linux/amd64` and `linux/arm64`, so Apple Silicon and other ARM hosts can pull the same tag.
+
 If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
+
+### Docker Compose from a Published Image
+
+If you prefer not to build locally, create a `compose.yml` that references a published image directly.
+
+#### Option A: SQLite in the same container (self-hosted online mode)
+
+```yaml
+services:
+  init-tracker:
+    image: ghcr.io/seroph386/init-tracker:latest
+    ports:
+      - "8787:8787"
+    environment:
+      SQLITE_SYNC_HOST: 0.0.0.0
+      SQLITE_SYNC_PORT: 8787
+      SQLITE_SYNC_DB_PATH: /app/data/initiative-tracker.sqlite
+      SQLITE_SYNC_STATIC_DIR: /app/dist
+      SQLITE_SYNC_STATIC_BASE_PATH: /
+    volumes:
+      - init-tracker-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  init-tracker-data:
+```
+
+#### Option B: Firebase frontend image (no local SQLite state)
+
+The published image is built with `VITE_SQLITE_SYNC_URL=/` and can always use SQLite mode. To run Firebase mode from a container, build an image with Firebase `VITE_FIREBASE_*` values at build time and no `VITE_SQLITE_SYNC_URL`, then reference that image in compose:
+
+```yaml
+services:
+  init-tracker:
+    image: ghcr.io/<owner>/<firebase-tag>
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+```
+
+Use the DM Settings panel to choose Firebase once the app is running.
 
 ## Usage
 

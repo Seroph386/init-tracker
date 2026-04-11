@@ -60,7 +60,38 @@ docker pull ghcr.io/seroph386/init-tracker:latest
 docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
+The publish workflow builds a multi-arch manifest (`linux/amd64` and `linux/arm64`) so ARM hosts can pull `latest` and `sha-*` tags without a platform mismatch.
+
 If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
+
+### Compose using the published image (no local build)
+
+```yaml
+services:
+  init-tracker:
+    image: ghcr.io/seroph386/init-tracker:latest
+    ports:
+      - "8787:8787"
+    environment:
+      SQLITE_SYNC_HOST: 0.0.0.0
+      SQLITE_SYNC_PORT: 8787
+      SQLITE_SYNC_DB_PATH: /app/data/initiative-tracker.sqlite
+      SQLITE_SYNC_STATIC_DIR: /app/dist
+      SQLITE_SYNC_STATIC_BASE_PATH: /
+    volumes:
+      - init-tracker-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  init-tracker-data:
+```
+
+Run it with `docker compose up -d`.
+
+### Firebase + compose note
+
+The default published image is intentionally SQLite-ready (`VITE_SQLITE_SYNC_URL=/`).
+If you need a Firebase-first image, publish a second tag built with your `VITE_FIREBASE_*` build args/env and without `VITE_SQLITE_SYNC_URL`, then point compose to that tag.
 
 Useful commands:
 
