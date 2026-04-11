@@ -125,7 +125,79 @@ docker pull ghcr.io/seroph386/init-tracker:latest
 docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
+Published images are now built for both `linux/amd64` and `linux/arm64`, so Apple Silicon and other ARM hosts can pull the same tag.
+
 If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
+
+### Docker Compose from Published Images
+
+If you prefer not to build locally, use a compose file that references a published image and keep runtime settings in an external env file.
+
+#### Option A: SQLite image (`:latest`) + runtime env file
+
+`compose.sqlite.yml`
+
+```yaml
+services:
+  init-tracker:
+    image: ghcr.io/seroph386/init-tracker:latest
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    env_file:
+      - ./deploy/sqlite-runtime.env
+    volumes:
+      - init-tracker-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  init-tracker-data:
+```
+
+`deploy/sqlite-runtime.env` (create from `deploy/sqlite-runtime.env.example`)
+
+```dotenv
+SQLITE_SYNC_HOST=0.0.0.0
+SQLITE_SYNC_PORT=8787
+SQLITE_SYNC_DB_PATH=/app/data/initiative-tracker.sqlite
+SQLITE_SYNC_STATIC_DIR=/app/dist
+SQLITE_SYNC_STATIC_BASE_PATH=/
+```
+
+Run with:
+
+```bash
+docker compose -f compose.sqlite.yml up -d
+```
+
+#### Option B: Firebase image (`:latest-firebase`) + env file for compose vars
+
+The publish workflow can also publish a Firebase-built image tag (`latest-firebase`, `sha-...-firebase`) when Firebase secrets are configured in GitHub Actions.
+
+`compose.firebase.yml`
+
+```yaml
+services:
+  init-tracker:
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    restart: unless-stopped
+```
+
+`deploy/firebase-compose.env` (create from `deploy/firebase-compose.env.example`)
+
+```dotenv
+INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest-firebase
+INIT_TRACKER_PORT=8787
+```
+
+Run with:
+
+```bash
+docker compose --env-file deploy/firebase-compose.env -f compose.firebase.yml up -d
+```
+
+Use the DM Settings panel to choose Firebase once the app is running.
 
 ## Usage
 

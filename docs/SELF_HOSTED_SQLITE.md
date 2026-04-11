@@ -60,7 +60,67 @@ docker pull ghcr.io/seroph386/init-tracker:latest
 docker run -p 8787:8787 -v init-tracker-data:/app/data ghcr.io/seroph386/init-tracker:latest
 ```
 
+The publish workflow builds a multi-arch manifest (`linux/amd64` and `linux/arm64`) so ARM hosts can pull `latest` and `sha-*` tags without a platform mismatch.
+
 If you publish under a different GitHub `owner/repo`, replace `seroph386/init-tracker` with your own image path.
+
+### Compose using the published SQLite image (no local build)
+
+Keep runtime settings in an external env file:
+
+`compose.sqlite.yml`
+
+```yaml
+services:
+  init-tracker:
+    image: ghcr.io/seroph386/init-tracker:latest
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    env_file:
+      - ./deploy/sqlite-runtime.env
+    volumes:
+      - init-tracker-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  init-tracker-data:
+```
+
+`deploy/sqlite-runtime.env` (create from `deploy/sqlite-runtime.env.example`)
+
+```dotenv
+SQLITE_SYNC_HOST=0.0.0.0
+SQLITE_SYNC_PORT=8787
+SQLITE_SYNC_DB_PATH=/app/data/initiative-tracker.sqlite
+SQLITE_SYNC_STATIC_DIR=/app/dist
+SQLITE_SYNC_STATIC_BASE_PATH=/
+```
+
+Run it with `docker compose -f compose.sqlite.yml up -d`.
+
+### Firebase published image + compose
+
+The publish workflow can also publish Firebase image tags (`latest-firebase`, `sha-...-firebase`) when Firebase secrets are configured in GitHub Actions.
+
+`compose.firebase.yml`
+
+```yaml
+services:
+  init-tracker:
+    image: ${INIT_TRACKER_IMAGE:-ghcr.io/seroph386/init-tracker:latest-firebase}
+    ports:
+      - "${INIT_TRACKER_PORT:-8787}:8787"
+    restart: unless-stopped
+```
+
+`deploy/firebase-compose.env` (create from `deploy/firebase-compose.env.example`)
+
+```dotenv
+INIT_TRACKER_IMAGE=ghcr.io/seroph386/init-tracker:latest-firebase
+INIT_TRACKER_PORT=8787
+```
+
+Run it with `docker compose --env-file deploy/firebase-compose.env -f compose.firebase.yml up -d`.
 
 Useful commands:
 
