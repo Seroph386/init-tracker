@@ -124,6 +124,9 @@ function removeCombatant(i: number): void {
           </NumberFieldRoot>
         </td>
         <td>
+          <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
+            {{ '🩸'.repeat(getBloodDropCount(combatant)) }}
+          </span>
           {{ combatant.name }}
           <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
             {{ '🩸'.repeat(getBloodDropCount(combatant)) }}

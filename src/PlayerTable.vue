@@ -77,6 +77,9 @@ function hideConditionTooltip(): void {
         >
           <td class="text-center">{{combatant.initiative}}</td>
           <td class="">
+            <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
+              {{ '🩸'.repeat(getBloodDropCount(combatant)) }}
+            </span>
             {{ combatant.name }}
             <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
               {{ '🩸'.repeat(getBloodDropCount(combatant)) }}

@@ -46,6 +46,9 @@ function formatConditionLabel(name: string, value: number): string {
             class="text-5xl md:text-7xl font-bold break-words transition-colors"
             :class="getVisibleHpTextClass(currentCombatant)"
           >
+            <span v-if="currentCombatant && getBloodDropCount(currentCombatant) > 0" aria-hidden="true">
+              {{ "🩸".repeat(getBloodDropCount(currentCombatant)) }}
+            </span>
             {{ currentCombatant?.name || "—" }}
             <span v-if="currentCombatant && getBloodDropCount(currentCombatant) > 0" aria-hidden="true">
               {{ "🩸".repeat(getBloodDropCount(currentCombatant)) }}
@@ -76,6 +79,9 @@ function formatConditionLabel(name: string, value: number): string {
             class="text-4xl md:text-6xl font-semibold break-words transition-colors"
             :class="getVisibleHpTextClass(nextCombatant)"
           >
+            <span v-if="nextCombatant && getBloodDropCount(nextCombatant) > 0" aria-hidden="true">
+              {{ "🩸".repeat(getBloodDropCount(nextCombatant)) }}
+            </span>
             {{ nextCombatant?.name || "—" }}
             <span v-if="nextCombatant && getBloodDropCount(nextCombatant) > 0" aria-hidden="true">
               {{ "🩸".repeat(getBloodDropCount(nextCombatant)) }}

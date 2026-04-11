@@ -299,13 +299,13 @@ function getHpProgressClass(combatant: Pick<Combatant, "currentHP" | "totalHP">)
 }
 
 function getBloodDropCount(combatant: Pick<Combatant, "currentHP" | "totalHP">): number {
-    const hpRatio = getHpRatio(combatant)
+    const hpStatus = getHpStatus(combatant)
 
-    if (hpRatio < 0.25) {
+    if (hpStatus === "critical") {
         return 2
     }
 
-    if (hpRatio < 0.5) {
+    if (hpStatus === "wounded") {
         return 1
     }
 
