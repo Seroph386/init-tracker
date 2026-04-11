@@ -34,8 +34,6 @@ const emit = defineEmits<{
   (e: 'saveEncounter', name: string): void
   (e: 'loadEncounter', id: string): void
   (e: 'deleteEncounter', id: string): void
-  (e: 'signInWithGoogle'): void
-  (e: 'signInWithGithub'): void
   (e: 'signInLocalGM'): void
   (e: 'signOutGM'): void
 }>()
@@ -225,14 +223,6 @@ function deleteEncounter(): void {
   selectedEncounterId.value = ''
 }
 
-function signInWithGoogle(): void {
-  emit('signInWithGoogle')
-}
-
-function signInWithGithub(): void {
-  emit('signInWithGithub')
-}
-
 function signInLocalGM(): void {
   emit('signInLocalGM')
 }
@@ -368,14 +358,6 @@ async function copyOnDeckUrl(): Promise<void> {
             <span v-if="isGMLoggedIn" class="badge badge-success px-3 py-4">
               {{ t.dm_actions.loggedInAs }} {{ gmUserEmail }}
             </span>
-            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInWithGoogle">
-              <Icon icon="tabler:brand-google" height="20" />
-              {{ t.dm_actions.signInGoogle }}
-            </button>
-            <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInWithGithub">
-              <Icon icon="tabler:brand-github" height="20" />
-              {{ t.dm_actions.signInGithub }}
-            </button>
             <button v-if="!isGMLoggedIn" class="btn btn-outline btn-sm" @click="signInLocalGM">
               <Icon icon="tabler:user" height="20" />
               {{ t.dm_actions.signInLocal }}

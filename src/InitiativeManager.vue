@@ -7,7 +7,7 @@ import PlayerView from "./PlayerView.vue";
 import PlayerSimpleView from "./PlayerSimpleView.vue";
 import type {GameSystem} from "./db.ts";
 import {generateSessionId} from "./firebase.ts";
-import { signInWithGithub, signInWithGoogle, signOutGM, useFirebaseCurrentUser, useFirebaseSync } from "./firebase.ts";
+import { signOutGM, useFirebaseCurrentUser, useFirebaseSync } from "./firebase.ts";
 import { signInLocalGM, signOutLocalGM, useLocalGMUser } from "./localAuth.ts";
 import { useTranslations } from "./lang.ts";
 import {
@@ -652,22 +652,6 @@ function deleteEncounter(encounterId: string): void {
   savedEncounters.value = savedEncounters.value.filter((encounter) => encounter.id !== encounterId)
 }
 
-async function handleSignInWithGoogle(): Promise<void> {
-  try {
-    await signInWithGoogle()
-  } catch (error) {
-    console.error('Google sign-in failed:', error)
-  }
-}
-
-async function handleSignInWithGithub(): Promise<void> {
-  try {
-    await signInWithGithub()
-  } catch (error) {
-    console.error('GitHub sign-in failed:', error)
-  }
-}
-
 async function handleSignOutGM(): Promise<void> {
   signOutLocalGM()
 
@@ -711,8 +695,8 @@ function handleSignInLocalGM(): void {
       :availableOnlineProviders="availableOnlineProviders"
       :isOnlineAvailable="isOnlineAvailable"
       :savedEncounters="savedEncounters.map(encounter => ({ id: encounter.id, name: encounter.name }))"
-      :gmUserEmail="firebaseUser?.email || localGMUser?.displayName || ''"
-      :isGMLoggedIn="!!firebaseUser || !!localGMUser"
+      :gmUserEmail="localGMUser?.displayName || ''"
+      :isGMLoggedIn="!!localGMUser"
       @nextTurn="nextTurn"
       @reset="reset"
       @resetToDefaults="resetToDefaults"
@@ -723,8 +707,6 @@ function handleSignInLocalGM(): void {
       @saveEncounter="saveEncounter"
       @loadEncounter="loadEncounter"
       @deleteEncounter="deleteEncounter"
-      @signInWithGoogle="handleSignInWithGoogle"
-      @signInWithGithub="handleSignInWithGithub"
       @signInLocalGM="handleSignInLocalGM"
       @signOutGM="handleSignOutGM"
   />
