@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import {ref, computed} from "vue";
-import {Combatant, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
+import {Combatant, getBloodDropCount, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
 import { Icon } from "@iconify/vue";
 import {useStorage} from "@vueuse/core";
 import {
@@ -123,7 +123,12 @@ function removeCombatant(i: number): void {
             <NumberFieldInput class="input text-center w-20" />
           </NumberFieldRoot>
         </td>
-        <td>{{combatant.name}}</td>
+        <td>
+          {{ combatant.name }}
+          <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
+            {{ '🩸'.repeat(getBloodDropCount(combatant)) }}
+          </span>
+        </td>
         <td class="text-center">
           <div>
             <progress

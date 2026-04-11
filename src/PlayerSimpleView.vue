@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { Combatant, getConditionTextClass, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility } from "./functions.ts";
+import { Combatant, getBloodDropCount, getConditionTextClass, getHpTextClass, getVisibleCombatantAtOrAfter, Visibility } from "./functions.ts";
 import { useTranslations } from "./lang.ts";
 
 const { t } = useTranslations();
@@ -47,6 +47,9 @@ function formatConditionLabel(name: string, value: number): string {
             :class="getVisibleHpTextClass(currentCombatant)"
           >
             {{ currentCombatant?.name || "—" }}
+            <span v-if="currentCombatant && getBloodDropCount(currentCombatant) > 0" aria-hidden="true">
+              {{ "🩸".repeat(getBloodDropCount(currentCombatant)) }}
+            </span>
           </div>
           <div
             v-if="currentCombatant?.conditions?.length"
@@ -74,6 +77,9 @@ function formatConditionLabel(name: string, value: number): string {
             :class="getVisibleHpTextClass(nextCombatant)"
           >
             {{ nextCombatant?.name || "—" }}
+            <span v-if="nextCombatant && getBloodDropCount(nextCombatant) > 0" aria-hidden="true">
+              {{ "🩸".repeat(getBloodDropCount(nextCombatant)) }}
+            </span>
           </div>
           <div
             v-if="nextCombatant?.conditions?.length"

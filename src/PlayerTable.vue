@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import {Combatant, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
+import {Combatant, getBloodDropCount, getConditionTextClass, getHpProgressClass, Visibility} from "./functions.ts";
 import {useConditions} from "./db.ts";
 import { Icon } from "@iconify/vue";
 import {ref} from "vue";
@@ -76,7 +76,12 @@ function hideConditionTooltip(): void {
                 }, 'hover:bg-base-300']"
         >
           <td class="text-center">{{combatant.initiative}}</td>
-          <td class="">{{combatant.name}}</td>
+          <td class="">
+            {{ combatant.name }}
+            <span v-if="getBloodDropCount(combatant) > 0" aria-hidden="true">
+              {{ '🩸'.repeat(getBloodDropCount(combatant)) }}
+            </span>
+          </td>
           <td class="text-center">
             <div>
               <progress
